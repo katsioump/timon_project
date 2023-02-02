@@ -4,6 +4,23 @@ setwd("C:/Users/Katerina/Documents/Master thesis/obs")
 library(deSolve) # note due to some kind of bug in deSolve, it must be loaded before NicheMapR!
 library(NicheMapR)
 library(zoo)
+library(lubridate)
+
+tl <- read.csv(file = "C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP007.csv", head = TRUE)
+tl <- subset(tl, select = -c(1))
+
+tl$Date <- strptime(tl$Date, format = "%Y-%m-%d")
+tl$Date <- as.Date(tl$Date, format = "%Y%m%d")
+tl$date_time <- strptime(tl$date_time, format = "%Y-%m-%d %H:%M:%OS")
+tl$date_time <- as.POSIXct(tl$date_time)
+
+load(file='weatherIVILAR12_hourly.RData')
+weather <- weather_h
+
+source("micro_hourly.R")
+micro_out <- micro_hourly(41.1073, -8.5898, 230, weather, tl)
+metout <- as.data.frame(micro_out[1])
+soil <- as.data.frame(micro_out[2])
 
 #load(file='weatherIVILAR12.RData')
 #load(file='weatherIVILAR12_hourly.RData')
@@ -25,10 +42,9 @@ library(zoo)
 
 
 
-
 ##### Approximate metout dataset for every 1 second
 
-tl_m <- subset(tl, select = c('Date', 'Time', 'date_time', 'TemperatureC'))
+tl_m <- subset(tl, select = c('Date', 'Time', 'date_time', 'TemperatureC', 'air_temp'))
 tl_m <- na.omit(tl_m)
 
 
@@ -70,6 +86,8 @@ metout_new$TIME <- time_met
 
 metout_new <- cbind(metout_new, tl_m$TemperatureC)
 colnames(metout_new)[21] <- 'TASEN'
+metout_new$TAREF <- tl_m$air_temp
+
 
 ###### Approximate soil dataset for every 1 second
 
@@ -180,4 +198,4 @@ with(Tbs_ode, plot(Tc ~ time, type = 'l', col = '1', ylim = c(-10, 80), ylab='Te
 #with(Tbs_ode, points(Tc ~ time, type = 'l', lwd=2))
 with(Tbs_ode, points(Tcf ~ time, type = 'l', col = '2'))
 points(Tairf(time) ~ hours, type = 'l', col = 'blue', lty = 2)
-legend(100,80, c("Tc", "Tcf", "Tair"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("black", "red", "blue"))
+legend(75,80, c("Tc", "Tcf", "Tair"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("black", "red", "blue"))
