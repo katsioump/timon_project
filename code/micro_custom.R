@@ -1,14 +1,26 @@
 
 
-micro_custom <- function(lat, long, elev, weather, th=F, habitat='herb', slope=0, azmuth=180){
+micro_custom <- function(lat, long, elev, weather, tl, th=F, habitat='herb', slope=0, azmuth=180){
   Latitude <- lat # the latitude in decimal degrees Modivas weather station
   Longitude <- long # the longitude in decimal degrees Modivas weather station
-  Elevation <- elev # / 3.28084 # elevation, converted from feet to metres Modivas weather station
+  Elevation <-  elev #/ 3.28084 # elevation, converted from feet to metres Modivas weather station
   TZoffset <- 0 # the offset from Greenwich Mean Time, in hours
-  ystart <- 2021 # start year
+  ystart <- 2022 # start year
   yfinish <- 2022 # end year
   nyears <- yfinish - ystart + 1 # number of years to run
   
+  
+  # weather <- weather[weather$date >= (tl[1, 'date_time'] + 3600) & weather$date <= (tl[nrow(tl), 'date_time'] + 3600), ]
+  
+  # tl_h <- tl[0,]
+  # i <- 1
+  # while(i <= nrow(tl)) {
+  # tl_h <- rbind(tl_h, tl[i,])
+  # i <- i + 36000
+  # }
+  
+  # weather <- cbind(weather, tl_h$air_temp)
+  # colnames(weather)[13] <- "AirTemp"
   
   ### Setting the model modes
   
@@ -17,7 +29,7 @@ micro_custom <- function(lat, long, elev, weather, th=F, habitat='herb', slope=0
   writecsv <- 0 # make Fortran code write output as csv files
   runshade <- 1 # run the model twice, once for each shade level (1) or just for the first shade level (0)?
   runmoist <- 1 # run soil moisture model (0 = no, 1 = yes)?
-  snowmodel <- 1 # run the snow model (0 = no, 1 = yes)? - note that this runs slower
+  snowmodel <- 0 # run the snow model (0 = no, 1 = yes)? - note that this runs slower
   hourly <- 1 # run the model with hourly input data
   rainhourly <- 1 # run the model with hourly rainfall input data (irrelevant if hourly = 1)
   microdaily <- 1 # run microclimate model where one iteration of each day occurs and last day gives initial conditions for present day
@@ -31,7 +43,7 @@ micro_custom <- function(lat, long, elev, weather, th=F, habitat='herb', slope=0
   # These parameters relate to the geographic location and the time period over which the model will run
   
   longlat <- c(Longitude, Latitude) # decimal degrees longitude and latitude from the SCAN site data table
-  doynum <- floor(nrow(weather) / 24) # number of days to run, determined by counting the number of rows in the weather dataset and dividing by 24 to get days, but keeping it as a whole number
+  doynum <- ceiling(nrow(weather) / 24) # number of days to run, determined by counting the number of rows in the weather dataset and dividing by 24 to get days, but keeping it as a whole number
   idayst <- 1 # start day
   ida <- doynum # end day
   HEMIS <- ifelse(longlat[2] < 0, 2, 1) # chose hemisphere based on latitude
@@ -59,13 +71,12 @@ micro_custom <- function(lat, long, elev, weather, th=F, habitat='herb', slope=0
   Z02 <- 0 # 2nd segment roughness height(m)
   ZH1 <- 0 # Top of (1st) segment, height above surface(m)
   ZH2 <- 0 # 2nd segment, height above surface(m)
-  if(habitat == 'herb'){
+  if(habitat == 'herb') {
     SLE <- 0.98 # Substrate longwave IR emissivity (decimal %), typically close to 1
-  }
-  else{
+  } else {
     SLE <- 0.96 # Substrate longwave IR emissivity (decimal %), typically close to 1
   }
-  ERR <- 7 # Integrator error for soil temperature calculations
+  ERR <- 1.5 # Integrator error for soil temperature calculations
   
   Refhyt <- 3 # Changed to 3m as the pole
   
@@ -73,8 +84,7 @@ micro_custom <- function(lat, long, elev, weather, th=F, habitat='herb', slope=0
   Thcond <- 2.5 # soil minerals thermal conductivity (W/mC)
   if(habitat == 'herb'){
     Density <- 1.5 # soil minerals density (Mg/m3)
-  }
-  else {
+  }  else {
     Density <- 2.56 # soil minerals density (Mg/m3)
   }
   SpecHeat <- 870 # soil minerals specific heat (J/kg-K)
@@ -115,7 +125,7 @@ micro_custom <- function(lat, long, elev, weather, th=F, habitat='herb', slope=0
   
   # use na.approx function from zoo package to fill in missing data
   if(th==T){
-    TAIRhr <- weather$temperature <- na.approx(weather$temperature)
+    TAIRhr <- weather$AirTemp <- na.approx(weather$AirTemp)
   } else {
     TAIRhr <- weather$Temperature <- na.approx(5/9 * (weather$Temperature - 32)) # convert ºF to ºC
   }
@@ -138,14 +148,16 @@ micro_custom <- function(lat, long, elev, weather, th=F, habitat='herb', slope=0
   # append dates
   metout <- as.data.frame(micro$metout)
   # subset metout to match dates with weather data
-  metout <- metout[metout$DOY %in% unique(as.POSIXlt(weather$date)$yday),]
+  metout <- metout[metout$DOY %in% unique(yday(weather[,'date'])),]
+  metout <- head(metout, -(nrow(metout) - nrow(weather)))
+  
   clear <- as.data.frame(cbind(weather$date, metout[1:nrow(weather),13]),stringsAsFactors = FALSE)
-  doy <- rep(seq(1, 365),nyears)[1:floor(nrow(weather)/24)] # days of year to run
+  doy <- rep(seq(1, 365),nyears)[1:ceiling(nrow(weather)/24)] # days of year to run
   clear <- as.data.frame(clear, stringsAsFactors = FALSE)
   colnames(clear)=c("datetime", "sol")
   # find the maximum observed solar and adjust the clear sky prediction to this value 
   maxsol <- max(SOLRhr)
-  clear2 <- clear[, 2]*(maxsol / max(clear[, 2])) # get ratio of max observed to predicted max clear sky solar
+  clear2 <- clear[, 2]*(maxsol / max(clear[, 2], na.rm = T)) # get ratio of max observed to predicted max clear sky solar
   # compute cloud cover from ratio of max to observed solar
   sol <- SOLRhr
   clr <- clear2
@@ -215,7 +227,7 @@ micro_custom <- function(lat, long, elev, weather, th=F, habitat='herb', slope=0
   
   #use Campbell and Norman Table 9.1 soil moisture properties
   if(habitat == 'herb'){
-    soiltype <- 11 # 11 = clay
+    soiltype <- 11# 11 = clay
   } else {
     soiltype <- 3 # 3 = sandy loam
   }
@@ -275,7 +287,37 @@ micro_custom <- function(lat, long, elev, weather, th=F, habitat='herb', slope=0
   microin <- list(microinput = microinput, tides = tides, doy = doy, SLES = SLES, DEP = DEP, Nodes = Nodes, MAXSHADES = MAXSHADES, MINSHADES = MINSHADES, TIMAXS = TIMAXS, TIMINS = TIMINS, TMAXX = TMAXX, TMINN = TMINN, RHMAXX = RHMAXX, RHMINN = RHMINN, CCMAXX = CCMAXX, CCMINN = CCMINN, WNMAXX = WNMAXX, WNMINN = WNMINN, TAIRhr = TAIRhr, RHhr = RHhr, WNhr = WNhr, CLDhr = CLDhr, SOLRhr = SOLRhr, RAINhr = RAINhr, ZENhr = ZENhr, IRDhr = IRDhr, REFLS = REFLS, PCTWET = PCTWET, soilinit = soilinit, hori = hori, TAI = TAI, soilprops = soilprops, moists = moists, RAINFALL = RAINFALL, tannulrun = tannulrun, PE = PE, KS = KS, BB = BB, BD = BD, DD = DD, L = L, LAI = LAI)
   micro <- microclimate(microin) # run the model in Fortran
   
-  return(micro)
+  ### Retrieving the output and plotting the results against observed values
+  
+  # Now the model has run and we need to retrieve the output from the ```micro``` list and add the date/time vector to them from the dataset.
+  
+  # retrieve ouptut
+  dates <- weather$date
+  metout <- as.data.frame(micro$metout[1:nrow(weather),]) # retrieve above ground microclimatic conditions, min shade
+  shadmet <- as.data.frame(micro$shadmet[1:nrow(weather),]) # retrieve above ground microclimatic conditions, max shade
+  soil <- as.data.frame(micro$soil[1:nrow(weather),]) # retrieve soil temperatures, minimum shade
+  shadsoil <- as.data.frame(micro$shadsoil[1:nrow(weather),]) # retrieve soil temperatures, maximum shade
+  soilmoist <- as.data.frame(micro$soilmoist[1:nrow(weather),]) # retrieve soil moisture, minimum shade
+  shadmoist <-  as.data.frame(micro$shadmoist[1:nrow(weather),]) # retrieve soil moisture, maximum shade
+  humid <- as.data.frame(micro$humid[1:nrow(weather),]) # retrieve soil humidity, minimum shade
+  shadhumid <- as.data.frame(micro$shadhumid[1:nrow(weather),]) # retrieve soil humidity, maximum shade
+  soilpot <- as.data.frame(micro$soilpot[1:nrow(weather),]) # retrieve soil water potential, minimum shade
+  shadpot <- as.data.frame(micro$shadpot[1:nrow(weather),]) # retrieve soil water potential, maximum shade
+  # append dates
+  metout <- cbind(dates, metout)
+  shadmet <- cbind(dates, shadmet)
+  soil <- cbind(dates, soil)
+  shadsoil <- cbind(dates, shadsoil)
+  soilmoist <- cbind(dates, soilmoist)
+  shadmoist <- cbind(dates, shadmoist)
+  humid <- cbind(dates, humid)
+  shadhumid <- cbind(dates, shadhumid)
+  soilpot <- cbind(dates, soilpot)
+  shadpot <- cbind(dates, shadpot)
+  
+  micro_out <- list(metout, soil, shadmet, shadsoil)
+  
+  return(micro_out)
 }
 
 
