@@ -152,7 +152,8 @@ micro_custom <- function(lat, long, elev, weather, tl, th=F, habitat='herb', slo
   metout <- head(metout, -(nrow(metout) - nrow(weather)))
   
   clear <- as.data.frame(cbind(weather$date, metout[1:nrow(weather),13]),stringsAsFactors = FALSE)
-  doy <- rep(seq(1, 365),nyears)[1:ceiling(nrow(weather)/24)] # days of year to run
+  # doy <- rep(seq(1, 365),nyears)[1:ceiling(nrow(weather)/24)] # days of year to run
+  doy <- unique(yday(weather[,'date']))
   clear <- as.data.frame(clear, stringsAsFactors = FALSE)
   colnames(clear)=c("datetime", "sol")
   # find the maximum observed solar and adjust the clear sky prediction to this value 
@@ -319,7 +320,3 @@ micro_custom <- function(lat, long, elev, weather, tl, th=F, habitat='herb', slo
   
   return(micro_out)
 }
-
-
-
-
