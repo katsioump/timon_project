@@ -5,17 +5,17 @@ library(NicheMapR)
 library(zoo)
 library(lubridate)
 
+load(file='weatherIVILAR12_hourly.RData')
+weather <- weather_h
+
 tl <- read.csv(file = "C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP007.csv", head = TRUE)
 tl <- subset(tl, select = -c(1))
 
-# tl$Date <- strptime(tl$Date, format = "%Y-%m-%d")
-# tl$Date <- as.Date(tl$Date, format = "%Y%m%d")
 tl$date_time <- strptime(tl$date_time, format = "%Y-%m-%d %H:%M:%OS")
 tl$date_time <- as.POSIXct(tl$date_time)
 
-load(file='weatherIVILAR12_hourly.RData')
-# colnames(weather)[colnames(weather) == 'Precip. Rate.'] <- 'Precip..Rate.'
-weather <- weather_h
+# weather <- weather[weather$date >= (as.POSIXct("2022-05-22 00:00:00 BST") + 3600) & weather$date <= (as.POSIXct("2022-05-27 18:00:00 BST") + 3600), ]
+
 
 source("micro_custom.R")
 micro_out <- micro_custom(41.1073, -8.5898, 230, weather, tl, th=F, habitat='soil', slope=0, azmuth=180)
@@ -36,15 +36,15 @@ shadsoil <- shadsoil[shadsoil$dates >= (tl[1, 'date_time'] + 3600) & shadsoil$da
 
 with(soil, plot(D0cm ~ dates, type = 'l', col = 'red', ylab='Soil temperature, °C'))
 with(shadsoil, points(D0cm ~ dates, type = 'l'))
-legend("topleft", inset=c(0.65,0.1), c("Soil", "Soil shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("red", "black"))
+legend("topleft", inset=c(0.75,0.05), c("Soil", "Soil shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("red", "black"))
 
-with(metout, plot(TSKYC ~ dates, type = 'l', col = 'blue', ylab='Sky temperature, °C', ylim = c(0, 20)))
+with(metout, plot(TSKYC ~ dates, type = 'l', col = 'blue', ylab='Sky temperature, °C'))
 with(shadmet, points(TSKYC ~ dates, type = 'l'))
-legend("topleft", inset=c(0.5,0.05), c("Clear sky", "Sky shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("blue", "black"))
+legend("topleft", inset=c(0.75,0.05), c("Clear sky", "Sky shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("blue", "black"))
 
 with(metout, plot(SOLR ~ dates, type = 'l', col = 'red', ylab='Solar radiation'))
 with(shadmet, points(SOLR ~ dates, type = 'l'))
-legend("topleft", inset=c(0.65,0.1), c("Soil", "Soil shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("red", "black"))
+legend("topleft", inset=c(0.75,0.05), c("Soil", "Soil shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("red", "black"))
 
 
 #load(file='weatherIVILAR12.RData')
@@ -208,10 +208,10 @@ Tbs_ode <- as.data.frame(ode(y = Tc_init, t = t, func = onelump_var, parms = ind
 colnames(Tbs_ode) <- c('time', 'Tc', 'Tcf', 'tau', 'dTdt')
 Tbs_ode$time <- Tbs_ode$time / 3600 # convert to hours
 
-with(Tbs_ode, plot(Tc ~ time, type = 'l', col = '1', ylim = c(-10, 80), ylab='Temperature, °C',xlab = 'hour of simulation'))
+with(Tbs_ode, plot(Tc ~ time, type = 'l', col = '1', ylim = c(0, 60), ylab='Temperature, °C',xlab = 'hour of simulation'))
 #with(Tbs_ode, points(Tc ~ time, type = 'l', lwd=2))
 with(Tbs_ode, points(Tcf ~ time, type = 'l', col = '2'))
 points(Tairf(time) ~ hours, type = 'l', col = 'blue', lty = 2)
-legend(75,80, c("Tc", "Tcf", "Tair"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("black", "red", "blue"))
+legend(75,60, c("Tc", "Tcf", "Tair"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("black", "red", "blue"))
 
 
