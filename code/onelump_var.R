@@ -8,13 +8,13 @@ library(lubridate)
 load(file='weatherIVILAR12_hourly.RData')
 weather <- weather_h
 
-tl <- read.csv(file = "C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP007.csv", head = TRUE)
+tl <- read.csv(file = "C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP012.csv", head = TRUE)
 tl <- subset(tl, select = -c(1))
 
 tl$date_time <- strptime(tl$date_time, format = "%Y-%m-%d %H:%M:%OS")
 tl$date_time <- as.POSIXct(tl$date_time)
 
-# weather <- weather[weather$date >= (as.POSIXct("2022-05-22 00:00:00 BST") + 3600) & weather$date <= (as.POSIXct("2022-05-27 18:00:00 BST") + 3600), ]
+# weather <- weather[weather$date >= (tl[1, 'date_time'] + 3600) & weather$date <= (tl[nrow(tl), 'date_time'] + 3600), ]
 
 
 source("micro_custom.R")
@@ -38,7 +38,7 @@ with(soil, plot(D0cm ~ dates, type = 'l', col = 'red', ylab='Soil temperature, �
 with(shadsoil, points(D0cm ~ dates, type = 'l'))
 legend("topleft", inset=c(0.75,0.05), c("Soil", "Soil shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("red", "black"))
 
-with(metout, plot(TSKYC ~ dates, type = 'l', col = 'blue', ylab='Sky temperature, °C'))
+with(metout, plot(TSKYC ~ dates, type = 'l', col = 'blue', ylab='Sky temperature, °C', ylim = c(0, 20)))
 with(shadmet, points(TSKYC ~ dates, type = 'l'))
 legend("topleft", inset=c(0.75,0.05), c("Clear sky", "Sky shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("blue", "black"))
 
@@ -135,7 +135,7 @@ colnames(microclimate) <- c('dates', 'DOY', 'TIME', 'TALOC', 'TA1.2m', 'VLOC', '
 str(microclimate)
 
 
-# define animal parameters - here simulating a 1000 g ellipsoid
+# define animal parameters
 c_body <- 3762 # specific heat of flesh, J/kg-C
 rho_body <- 1000 # animal density, kg/m3
 q <- 0 # metabolic rate, W/m3
@@ -149,8 +149,8 @@ shape_coefs <- c(10.4713, 0.688, 0.425, 0.85, 3.798, 0.683, 0.694, 0.743)
 fatosk <- 0.4 # solar configuration factor to sky, -
 fatosb <- 0.4 # solar configuration factor to substrate, -
 alpha <- 0.9 # animal solar absorptivity, -
-emis <- 0.95 # emissivity of skin, -
-Ww_g <- 81.1 # weight, g
+emis <- 0.95 # emisivity of skin, -
+Ww_g <- 102.2 # weight, g
 alpha_sub <- 0.8 # substrate solar absorptivity, -
 press <- 101325 # air pressure, Pa
 pdif <- 0.1 # proportion of solar energy that is diffuse, -
@@ -210,8 +210,19 @@ Tbs_ode$time <- Tbs_ode$time / 3600 # convert to hours
 
 with(Tbs_ode, plot(Tc ~ time, type = 'l', col = '1', ylim = c(0, 60), ylab='Temperature, °C',xlab = 'hour of simulation'))
 #with(Tbs_ode, points(Tc ~ time, type = 'l', lwd=2))
-with(Tbs_ode, points(Tcf ~ time, type = 'l', col = '2'))
-points(Tairf(time) ~ hours, type = 'l', col = 'blue', lty = 2)
-legend(75,60, c("Tc", "Tcf", "Tair"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("black", "red", "blue"))
+# with(Tbs_ode, points(Tcf ~ time, type = 'l', col = 'blue'))
+points(Tairf(time) ~ hours, type = 'l', col = 'red', lty = 2)
+legend(75,60, c("Tc", "Tair"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("black", "red"))
+abline(h = 40)
 
+Tb <- seq(1, nrow(tl))
+Tb[1:length(Tb)] <- NA
+j <- 1
+for (i in 1:nrow(tl_m)){
+  Tb[j] <- Tbs_ode[i, 'Tc']
+  j <- j + 10
+}
 
+tl <- cbind(tl, Tb)
+
+write.csv(tl, "C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP012.csv")
