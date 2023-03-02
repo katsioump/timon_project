@@ -3,12 +3,16 @@ setwd("C:/Users/Katerina/Documents/Master thesis/model")
 library(deSolve) # note due to some kind of bug in deSolve, it must be loaded before NicheMapR!
 library(NicheMapR)
 library(zoo)
+library(stringr)
 library(lubridate)
 
 load(file='weatherIVILAR12_hourly.RData')
 weather <- weather_h
 
-tl <- read.csv(file = "C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP012.csv", head = TRUE)
+n_sensor <- 8
+s <- str_pad(n_sensor, 2, pad = "0")
+path <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP0", s, ".csv")
+tl <- read.csv(file = path, head = TRUE)
 tl <- subset(tl, select = -c(1))
 
 tl$date_time <- strptime(tl$date_time, format = "%Y-%m-%d %H:%M:%OS")
@@ -150,7 +154,9 @@ fatosk <- 0.4 # solar configuration factor to sky, -
 fatosb <- 0.4 # solar configuration factor to substrate, -
 alpha <- 0.9 # animal solar absorptivity, -
 emis <- 0.95 # emisivity of skin, -
-Ww_g <- 102.2 # weight, g
+########### change according to animal
+Ww_g <- 78.4 # weight, g
+###########
 alpha_sub <- 0.8 # substrate solar absorptivity, -
 press <- 101325 # air pressure, Pa
 pdif <- 0.1 # proportion of solar energy that is diffuse, -
@@ -225,4 +231,4 @@ for (i in 1:nrow(tl_m)){
 
 tl <- cbind(tl, Tb)
 
-write.csv(tl, "C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP012.csv")
+write.csv(tl, path)
