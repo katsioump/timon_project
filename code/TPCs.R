@@ -10,7 +10,7 @@ tl <- subset(tl, select = -c(1))
 
 
 #### Data format
-#### Create bins for Tb and select the rows with the 10 maximum Tb values ###
+#### Create bins for Tb and select the rows with the 5 maximum Tb values ###
 
 tl_c <- subset(tl, select = c("Tb", "VeDBA"))
 tl_c <- na.omit(tl_c)
