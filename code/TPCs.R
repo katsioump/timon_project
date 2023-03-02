@@ -5,7 +5,7 @@ library(broom)
 library(tidyverse)
 library(MuMIn)
 
-tl <- read.csv(file = "C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP008.csv", head = TRUE)
+tl <- read.csv(file = "C:\\Users\\Katerina\\Desktop\\mesocosms\\Tb_first\\TLCRP008.csv", head = TRUE)
 tl <- subset(tl, select = -c(1))
 
 
