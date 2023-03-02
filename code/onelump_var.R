@@ -231,4 +231,5 @@ for (i in 1:nrow(tl_m)){
 
 tl <- cbind(tl, Tb)
 
-write.csv(tl, path)
+path1 <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\Tb_first\\TLCRP0", s, ".csv")
+write.csv(tl, path1)
