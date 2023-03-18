@@ -316,7 +316,7 @@ micro_custom <- function(lat, long, elev, weather, tl, th=F, habitat='herb', slo
   soilpot <- cbind(dates, soilpot)
   shadpot <- cbind(dates, shadpot)
   
-  micro_out <- list(metout, soil, shadmet, shadsoil)
+  micro_out <- list(metout, soil, shadmet, shadsoil, humid, shadhumid)
   
   return(micro_out)
 }
