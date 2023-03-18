@@ -38,7 +38,7 @@ Set location (longitude and latitude for Vilar do Pinheiro, Portugal weather sta
 ```{r, eval=F}
 lon <- -8.5898
 lat <- 41.1073 
-dstart <- "01/05/2022"
+dstart <- "20/05/2022"
 dfinish <- "30/06/2022"
 minshade <- 0
 maxshade <- 90
@@ -123,6 +123,7 @@ shadhumid <- data.frame(micro$shadhumid) # RH in soil at maximum shade
 #
 load(file='C:/Users/Katerina/Documents/Master thesis/model/weatherIVILAR12_hourly.RData')
 weather <- weather_h
+weather <- weather[weather$date >= "2022-05-20 16:00:00 UTC", ]
 
 source("C:/Users/Katerina/Documents/Master thesis/model/micro_custom.R")
 micro_out <- micro_custom(41.1073, -8.5898, 230, weather, tl, th=F, habitat='soil', slope=0, azmuth=180)
@@ -326,4 +327,5 @@ with(hshade1_50cm, points(datetime, hum * 100, type='l', col='red'))
 text(as.POSIXct("2022-05-30 00:00:00 UTC"), 15, 
      paste0("RMSE = ", rmse.calc(shadhumid, hshade1_50cm, depth=8, micro)*100))
 ```
+
 
