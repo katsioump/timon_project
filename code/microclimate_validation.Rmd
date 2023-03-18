@@ -38,7 +38,7 @@ Set location (longitude and latitude for Vilar do Pinheiro, Portugal weather sta
 ```{r, eval=F}
 lon <- -8.5898
 lat <- 41.1073 
-dstart <- "20/05/2022"
+dstart <- "01/05/2022"
 dfinish <- "30/06/2022"
 minshade <- 0
 maxshade <- 90
