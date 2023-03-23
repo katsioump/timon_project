@@ -2,7 +2,6 @@
 title: "Validation of the microclimate model"
 date: "`r Sys.Date()`"
 output: 
-  pdf_document: default
   html_document:
     toc: true
     toc_float: true
@@ -13,13 +12,10 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-knitr::opts_knit$set(root.dir = "C:/Users/Katerina/Documents/Master thesis/micro")
+# knitr::opts_knit$set(root.dir = "C:/Users/Katerina/Documents/Master thesis/micro")
+knitr::opts_knit$set(root.dir = "/Users/usuario/Dropbox/2_supervisions/Katerina/body-temperature/data")
 ```
 
-
-```{r, eval=F}
-setwd("C:/Users/Katerina/Documents/Master thesis/micro")
-```
 
 ### Parameters and running the model
 
@@ -28,20 +24,19 @@ Load packages:
 ```{r}
 library(NicheMapR)
 library(microclima)
-library(raster)
 library(lubridate)
 ```
 
 Set location (longitude and latitude for mesocosm location, Vila Nova de Gaia) and model parameters. Most model parameters take default values. To improve the fit of the model we decreased the thermal conductivity of the soil (`Thcond` from 2.5 to 1.5) and increased bulk density (`BulkDensity` from 1.3 to 2.45). In addition, we slightly increased the parameter that controls water runon (`rainmult` from 1 to 1.1). We also run the model for two shading levels: full sun (0% shade; `minshade <- 0`) and deep shade (90% shade; `maxshade <- 90`). These shading levels represents the extremes that an organisms may encounter in a given location, as well as all intermediate options (via interpolation).
 
-```{r, eval=F}
+```{r}
 lon <- -8.5898
 lat <- 41.1073 
 dstart <- "20/05/2022"
 dfinish <- "30/06/2022"
 minshade <- 0
-maxshade <- 90
-rainmult <- 1.1
+maxshade <- 30
+rainmult <- 1
 Thcond <- 2.5
 SpecHeat <- 870
 Density <- 2.45
@@ -60,10 +55,10 @@ ERR <- 1
 
 We obtained a digital elevation model (DEM) for the study location using the `get_dem` function of the microclima R-package (citation), and downloaded it for later use. From the DEM we calculated elevation, slope and aspect, as well as the horizon angles, which impact on the incidence of solar radiation during the day.
 
-```{r, eval=F}
-dem <- microclima::get_dem(r = NA, lat = lat, lon = lon, resolution = 30, 
-                            zmin = -20, xdims = 100, ydims = 100)
-save(dem, file = "dem.Rda")
+```{r}
+# dem <- microclima::get_dem(r = NA, lat = lat, lon = lon, resolution = 30, 
+#                             zmin = -20, xdims = 100, ydims = 100)
+# save(dem, file = "dem.Rda")
 
 load("dem.Rda")
 
@@ -84,12 +79,11 @@ for (i in 0:35) {
 hori <- spline(x = ha36, n = 24, method =  'periodic')$y
 hori[hori < 0] <- 0
 hori[hori > 90] <- 90
-
 ```
 
 With these parameters we run the model with the gads (`run.gads = 1`), soil moisture (`runmoist = 1`), and snow models (`snowmodel = 1`) turned on. In a first run, we set `save` to 1 to download environmental forcing variables from NCEP and store them locally. Then, we set `save = 2` to read in saved weather data in next runs (e.g. while testing parameter values). 
 
-```{r, eval=F}
+```{r}
 micro <- micro_ncep(loc = c(lon, lat), SLE = SLE, warm = warm, soilgrids = soilgrids, 
                dstart = dstart, dfinish = dfinish, Usrhyt = Usrhyt,
                slope = slope, aspect = aspect, REFL = REFL,
@@ -99,11 +93,10 @@ micro <- micro_ncep(loc = c(lon, lat), SLE = SLE, warm = warm, soilgrids = soilg
                windfac = windfac, spatial = spatial, ERR = ERR, dem = dem, 
                runshade = 1, run.gads = 1, snowmodel = 1, runmoist = 1,
                save = 2)
-
-save(micro, file = "micro_ncep.Rda")
 ```
 
-```{r, echo=F}
+```{r, echo=F, eval=F}
+# save(micro, file = "micro_ncep.Rda")
 load("micro_ncep.Rda")
 ```
 
@@ -124,24 +117,24 @@ shadhumid <- data.frame(micro$shadhumid) # RH in soil at maximum shade
 
 # location temperature (rock)
 tloc_sun_0cm <- read.csv(file = 'MS004T.csv', head=T)
-tloc_sun_0cm <- data.frame(datetime = round(as.POSIXct(strptime(tloc_sun_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),temp = tloc_sun_0cm[,3])
+tloc_sun_0cm <- data.frame(datetime = round(as.POSIXct(strptime(tloc_sun_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),temp = as.numeric(paste(tloc_sun_0cm[,3],tloc_sun_0cm[,4], sep='.')))
 year(tloc_sun_0cm$datetime) <- 2022
 
 # soil sun
 tsoil_sun_0cm <- read.csv(file = 'MS002T.csv', head=T)
-tsoil_sun_0cm <- data.frame(datetime = round(as.POSIXct(strptime(tsoil_sun_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),temp = tsoil_sun_0cm[,3])
+tsoil_sun_0cm <- data.frame(datetime = round(as.POSIXct(strptime(tsoil_sun_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),temp = as.numeric(paste(tsoil_sun_0cm[,3],tsoil_sun_0cm[,4], sep='.')))
 year(tsoil_sun_0cm$datetime) <- 2022
 
-# soil sun buried (5 cm)
+# soil sun buried (15 cm)
 tsoil_sun_buried <- read.csv(file = 'MS005T.csv', head=T)
-tsoil_sun_buried <- data.frame(datetime = round(as.POSIXct(strptime(tsoil_sun_buried[,1], "%d/%m/%Y %H:%M")),"hours"),temp = tsoil_sun_buried[,3])
+tsoil_sun_buried <- data.frame(datetime = round(as.POSIXct(strptime(tsoil_sun_buried[,1], "%d/%m/%Y %H:%M")),"hours"),temp = as.numeric(paste(tsoil_sun_buried[,3],tsoil_sun_buried[,4], sep='.')))
 year(tsoil_sun_buried$datetime) <- 2022
 
 
 ```
 
 ```{r, out.width="100%", echo=F}
-source("aux_functions.R") # To calculate RMSEs
+source("../code/aux_functions.R") # To calculate RMSEs
 
 # plot
 par(mfrow=c(3,1), mar=c(2.5, 4, 0.5, 0.1))
@@ -165,11 +158,11 @@ text(as.POSIXct("2022-06-01 00:00:00 UTC"), max(soil$D0cm) * 0.8,
      paste0("RMSE = ", rmse.calc(soil, tsoil_sun_0cm, depth=1, micro)))
 
 
-with(soil, plot(micro$dates, D30cm, type='l', 
+with(soil, plot(micro$dates, D15cm, type='l', 
                 xlim=obs_range, ylim=c(5,35),
-                xlab='', ylab='Tsoil sun 30 cm (ºC)'))
+                xlab='', ylab='Tsoil sun 15 cm (ºC)'))
 with(tsoil_sun_buried, points(datetime, temp, type='l', col='red'))
-text(as.POSIXct("2022-06-02 00:00:00 UTC"), max(soil$D30cm) * 0.95,
+text(as.POSIXct("2022-06-02 00:00:00 UTC"), max(soil$D15cm) * 0.95,
      paste0("RMSE = ", rmse.calc(soil, tsoil_sun_buried, depth=7, micro)))
 
 
@@ -182,17 +175,17 @@ text(as.POSIXct("2022-06-02 00:00:00 UTC"), max(soil$D30cm) * 0.95,
 # soil temperature
 # air temperature
 tair_shad_0cm <- read.csv(file = 'MS006T.csv', head=T)
-tair_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(tair_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),temp = tair_shad_0cm[,3])
+tair_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(tair_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),temp = as.numeric(paste(tair_shad_0cm[,3],tair_shad_0cm[,4], sep='.')))
 year(tair_shad_0cm$datetime) <- 2022
 
 # rock shadow
 tloc_shad_0cm <- read.csv(file = 'MS003T.csv', head=T)
-tloc_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(tloc_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),temp = tloc_shad_0cm[,3])
+tloc_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(tloc_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),temp = as.numeric(paste(tloc_shad_0cm[,3],tloc_shad_0cm[,4], sep='.')))
 year(tloc_shad_0cm$datetime) <- 2022
 
 # soil shadow
 tsoil_shad_0cm <- read.csv(file = 'MS001T.csv', head=T)
-tsoil_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(tsoil_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),temp = tsoil_shad_0cm[,3])
+tsoil_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(tsoil_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),temp = as.numeric(paste(tsoil_shad_0cm[,3],tsoil_shad_0cm[,4], sep='.')))
 year(tsoil_shad_0cm$datetime) <- 2022
 
 
@@ -201,7 +194,7 @@ par(mfrow=c(3,1), mar=c(2.5, 4, 0.5, 0.1))
 
 obs_range <- as.POSIXct(c("2022-05-20 00:00:00 UTC","2022-06-30 23:00:00 UTC"))
 
-with(shadmet, plot(micro$dates, TAREF, type='l', 
+with(shadmet, plot(micro$dates, TALOC, type='l', 
                 xlim=obs_range, ylim=c(10,35),
                 xlab='', ylab='Tair shadow 0 cm (ºC)'))
 with(tair_shad_0cm, points(datetime, temp, type='l', col='red'))
@@ -232,20 +225,20 @@ text(as.POSIXct("2022-05-30 00:00:00 UTC"), max(shadsoil$D0cm) * 0.6,
 
 # location humidity (rock)
 hloc_sun_0cm <- read.csv(file = 'MS004H.csv', head=T)
-hloc_sun_0cm <- data.frame(datetime = round(as.POSIXct(strptime(hloc_sun_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),hum = hloc_sun_0cm[,3])
+hloc_sun_0cm <- data.frame(datetime = round(as.POSIXct(strptime(hloc_sun_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),hum = as.numeric(paste(hloc_sun_0cm[,3],hloc_sun_0cm[,4], sep='.')))
 year(hloc_sun_0cm$datetime) <- 2022
+hloc_sun_0cm$hum[hloc_sun_0cm$hum > 100] <- 100
 
 # humidity soil sun
 hsoil_sun_0cm <- read.csv(file = 'MS002H.csv', head=T)
-hsoil_sun_0cm <- data.frame(datetime = round(as.POSIXct(strptime(hsoil_sun_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),hum = hsoil_sun_0cm[,3])
+hsoil_sun_0cm <- data.frame(datetime = round(as.POSIXct(strptime(hsoil_sun_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),hum = as.numeric(paste(hsoil_sun_0cm[,3],hsoil_sun_0cm[,4], sep='.')))
 year(hsoil_sun_0cm$datetime) <- 2022
-hsoil_sun_0cm$hum <- hsoil_sun_0cm$hum/100
+hsoil_sun_0cm$hum[hsoil_sun_0cm$hum > 100] <- 100
 
 # humidity soil sun buried (? cm)
 hsoil_sun_buried <- read.csv(file = 'MS005H.csv', head=T)
-hsoil_sun_buried <- data.frame(datetime = round(as.POSIXct(strptime(hsoil_sun_buried[,1], "%d/%m/%Y %H:%M")),"hours"),hum = hsoil_sun_buried[,3])
+hsoil_sun_buried <- data.frame(datetime = round(as.POSIXct(strptime(hsoil_sun_buried[,1], "%d/%m/%Y %H:%M")),"hours"),hum = as.numeric(paste(hsoil_sun_buried[,3],hsoil_sun_buried[,4], sep='.')))
 year(hsoil_sun_buried$datetime) <- 2022
-hsoil_sun_buried$hum <- hsoil_sun_buried$hum/100
 hsoil_sun_buried$hum[hsoil_sun_buried$hum > 100] <- 100
 
 
@@ -265,19 +258,19 @@ text(as.POSIXct("2022-06-01 00:00:00 UTC"), max(metout$RHLOC) * 0.2,
 
 
 
-with(humid, plot(micro$dates, RH0cm, type='l', 
-                xlim=obs_range, ylim=c(0,1),
+with(humid, plot(micro$dates, RH0cm * 100, type='l', 
+                xlim=obs_range, ylim=c(0,100),
                 xlab='', ylab='RH soil sun 0 cm (ºC)'))
 with(hsoil_sun_0cm, points(datetime, hum, type='l', col='red'))
 text(as.POSIXct("2022-05-31 00:00:00 UTC"), max(humid$RH0cm) * 0.2,
      paste0("RMSE = ", rmse.calc(humid, hsoil_sun_0cm, depth=1, micro)))
 
 
-with(humid, plot(micro$dates, RH30cm, type='l', 
-                xlim=obs_range, ylim = c(0, 1),
+with(humid, plot(micro$dates, RH15cm * 100, type='l', 
+                xlim=obs_range, ylim = c(0, 100),
                 xlab='', ylab='RH soil sun 30 cm (ºC)'))
 with(hsoil_sun_buried, points(datetime, hum, type='l', col='red'))
-text(as.POSIXct("2022-06-07 00:00:00 UTC"), max(humid$RH30cm) * 0.8,
+text(as.POSIXct("2022-06-07 00:00:00 UTC"), max(humid$RH15cm) * 0.8,
      paste0("RMSE = ", rmse.calc(humid, hsoil_sun_buried, depth=7, micro)))
 ```
 
@@ -287,17 +280,17 @@ text(as.POSIXct("2022-06-07 00:00:00 UTC"), max(humid$RH30cm) * 0.8,
 
 # air humidity
 hair_shad_0cm <- read.csv(file = 'MS006H.csv', head=T)
-hair_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(hair_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),hum = hair_shad_0cm[,3])
+hair_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(hair_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),hum = as.numeric(paste(hair_shad_0cm[,3],hair_shad_0cm[,4], sep='.')))
 year(hair_shad_0cm$datetime) <- 2022
 
 # rock shadow
 hloc_shad_0cm <- read.csv(file = 'MS003H.csv', head=T)
-hloc_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(hloc_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),hum = hloc_shad_0cm[,3])
+hloc_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(hloc_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),hum = as.numeric(paste(hloc_shad_0cm[,3],hloc_shad_0cm[,4], sep='.')))
 year(hloc_shad_0cm$datetime) <- 2022
 
 # soil shadow
 hsoil_shad_0cm <- read.csv(file = 'MS001H.csv', head=T)
-hsoil_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(hsoil_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),hum = hsoil_shad_0cm[,3])
+hsoil_shad_0cm <- data.frame(datetime = round(as.POSIXct(strptime(hsoil_shad_0cm[,1], "%d/%m/%Y %H:%M")),"hours"),hum = as.numeric(paste(hsoil_shad_0cm[,3],hsoil_shad_0cm[,4], sep='.')))
 year(hsoil_shad_0cm$datetime) <- 2022
 hsoil_shad_0cm$hum <- hsoil_shad_0cm$hum/100
 
