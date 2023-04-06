@@ -6,10 +6,40 @@ library(zoo)
 library(stringr)
 library(lubridate)
 
-load(file='weatherIVILAR12_hourly.RData')
-weather <- weather_h
+# load(file='weatherIVILAR12_hourly.RData')
+# weather <- weather_h
+# weather <- weather[weather$date >= (tl[1, 'date_time'] + 3600) & weather$date <= (tl[nrow(tl), 'date_time'] + 3600), ]
 
-n_sensor <- 8
+
+# source("micro_custom.R")
+# micro_out <- micro_custom(41.1073, -8.5898, 230, weather, th=F, habitat='soil', slope=0, azmuth=180)
+
+# Microclimate model
+source("micro_ncep_fun.R")
+micro <- micro_ncep_fun()
+
+metout <- data.frame(micro$metout)
+shadmet <- data.frame(micro$shadmet)
+soil <- data.frame(micro$soil) 
+shadsoil <- data.frame(micro$shadsoil)
+dates <- micro$dates
+metout <- cbind(dates, metout)
+shadmet <- cbind(dates, shadmet)
+soil <- cbind(dates, soil)
+shadsoil <- cbind(dates, shadsoil)
+
+
+# Light reference datalogger data
+light_all <- read.csv(file = "C:/Users/Katerina/Desktop/mesocosms/obs/LIGHT_all.csv", head = T)
+light_all$date_time <- strptime(light_all$date_time, format = "%Y-%m-%d %H:%M:%OS")
+light_all$date_time <- as.POSIXct(light_all$date_time)
+light_all$Sensor.Raw <- 1000 - light_all$Sensor.Raw
+light_all$light <- (light_all$Sensor.Raw * 100)/1000
+
+#################
+
+# Animal datalogger data
+n_sensor <- 5
 s <- str_pad(n_sensor, 2, pad = "0")
 path <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP0", s, ".csv")
 tl <- read.csv(file = path, head = TRUE)
@@ -18,25 +48,33 @@ tl <- subset(tl, select = -c(1))
 tl$date_time <- strptime(tl$date_time, format = "%Y-%m-%d %H:%M:%OS")
 tl$date_time <- as.POSIXct(tl$date_time)
 
-# weather <- weather[weather$date >= (tl[1, 'date_time'] + 3600) & weather$date <= (tl[nrow(tl), 'date_time'] + 3600), ]
+# cut light reference data to the simulation period of the animal
+light_all <- light_all[light_all$date_time >= tl[1, 'date_time'] & light_all$date_time <= tl[nrow(tl), 'date_time'], ]
+light_all <- head(light_all, -(nrow(light_all) - nrow(tl)))
+
+tl$Sensor.Raw <- 1000 - tl$Sensor.Raw
+tl$light <- (tl$Sensor.Raw * 100)/1000
+tl$light_open <- light_all$light
+
+tl <- subset(tl, select = -c(lux, lux_max, rel_light))
+tl$rel_light <- (tl$light * 100)/tl$light_open
+
+# with(tl, plot(light_open ~ date_time))
+# with(tl, points(light ~ date_time, col = 'red'))
+# with(tl, points(rel_light ~ date_time, col = 'blue'))
 
 
-source("micro_custom.R")
-micro_out <- micro_custom(41.1073, -8.5898, 230, weather, tl, th=F, habitat='soil', slope=0, azmuth=180)
-# source("micro_hourly.R")
-# micro_out <- micro_hourly(41.1073, -8.5898, 230, weather, tl)
+# metout <- as.data.frame(micro_out[1]) 
+metout <- metout[metout$dates >= (tl[1, 'date_time']) & metout$dates <= (tl[nrow(tl), 'date_time']), ]
+# soil <- as.data.frame(micro_out[2])
+soil <- soil[soil$dates >= (tl[1, 'date_time']) & soil$dates <= (tl[nrow(tl), 'date_time']), ]
+# shadmet <- as.data.frame(micro_out[3])
+shadmet <- shadmet[shadmet$dates >= (tl[1, 'date_time']) & shadmet$dates <= (tl[nrow(tl), 'date_time']), ]
+# shadsoil <- as.data.frame(micro_out[4])
+shadsoil <- shadsoil[shadsoil$dates >= (tl[1, 'date_time']) & shadsoil$dates <= (tl[nrow(tl), 'date_time']), ]
 
 
-metout <- as.data.frame(micro_out[1]) 
-metout <- metout[metout$dates >= (tl[1, 'date_time'] + 3600) & metout$dates <= (tl[nrow(tl), 'date_time'] + 3600), ]
-soil <- as.data.frame(micro_out[2])
-soil <- soil[soil$dates >= (tl[1, 'date_time'] + 3600) & soil$dates <= (tl[nrow(tl), 'date_time'] + 3600), ]
-shadmet <- as.data.frame(micro_out[3])
-shadmet <- shadmet[shadmet$dates >= (tl[1, 'date_time'] + 3600) & shadmet$dates <= (tl[nrow(tl), 'date_time'] + 3600), ]
-shadsoil <- as.data.frame(micro_out[4])
-shadsoil <- shadsoil[shadsoil$dates >= (tl[1, 'date_time'] + 3600) & shadsoil$dates <= (tl[nrow(tl), 'date_time'] + 3600), ]
-
-
+par(mfrow=c(3,1), mar=c(2.5, 4, 0.5, 0.1))
 
 with(soil, plot(D0cm ~ dates, type = 'l', col = 'red', ylab='Soil temperature, °C'))
 with(shadsoil, points(D0cm ~ dates, type = 'l'))
@@ -50,34 +88,15 @@ with(metout, plot(SOLR ~ dates, type = 'l', col = 'red', ylab='Solar radiation')
 with(shadmet, points(SOLR ~ dates, type = 'l'))
 legend("topleft", inset=c(0.75,0.05), c("Soil", "Soil shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("red", "black"))
 
-
-#load(file='weatherIVILAR12.RData')
-#load(file='weatherIVILAR12_hourly.RData')
-
-# get microclimate data
-#loc <- c(41.1073, -8.5897) # mesocosm
-#Usrhyt <- 0.05 # height of midpoint of animal, m
-#micro1 <- micro_global(loc = loc, Usrhyt = Usrhyt) # run the model with specified location and animal height
-
-#source("micro_custom.R")
-#micro_custom(41.1073, -8.5897, 230, weather, th=F, habitat='herb', slope=0, azmuth=180)
-
-
-#metout <- as.data.frame(micro$metout) # above ground microclimatic conditions, min shade
-#soil <- as.data.frame(micro$soil) # soil temperatures, minimum shade
-
-#with(weather_h, plot(5/9 * (Temperature - 32) ~ date, type = 'l', col = '1', ylim = c(5, 35)))
-#with(weather_h, plot(Precip..Rate. ~ date, type = 'l', col = '1'))
-
+dev.off()
 
 
 ###################################################################
 
 
-
 tl_m <- subset(tl, select = c('date_time', 'TemperatureC', 'air_temp', 'rel_light'))
 tl_m <- na.omit(tl_m)
-tl_m <- tl_m[!(tl_m$date_time > (max(metout$dates) - 3600)), ]
+tl_m <- tl_m[!(tl_m$date_time > (max(metout$dates))), ]
 
 # tl_min <- tl_m[0,]
 # i <- 1
@@ -88,7 +107,7 @@ tl_m <- tl_m[!(tl_m$date_time > (max(metout$dates) - 3600)), ]
 # tl_m <- tl_min
 
 
-source("interp_micro.R")
+source("C:/Users/Katerina/Documents/Master thesis/model/interp_micro.R")
 inter <- interp_micro(metout, soil, shadmet, shadsoil, tl_m)
 
 metout <- as.data.frame(inter[1])
@@ -155,7 +174,7 @@ fatosb <- 0.4 # solar configuration factor to substrate, -
 alpha <- 0.9 # animal solar absorptivity, -
 emis <- 0.95 # emisivity of skin, -
 ########### change according to animal
-Ww_g <- 78.4 # weight, g
+Ww_g <- 61.7 # weight, g
 ###########
 alpha_sub <- 0.8 # substrate solar absorptivity, -
 press <- 101325 # air pressure, Pa
@@ -177,9 +196,7 @@ if((tl_m[2,1] - tl_m[1,1]) == 1){
 
 hours <- time/3600 # seconds to hours
 
-# tl_m$lux[is.infinite(tl_m$lux) == T] <- NA
-tl_m$rel_light[tl_m$rel_light > 100] <- 100 ### !!!!
-max_shad <- 100 - min(tl_m[, 'rel_light'])
+max_shad <- 100 - min(tl_m[, 'rel_light'], na.rm = T)
 
 Tsky_w <- vector()
 Qsol_w <- vector()
@@ -210,15 +227,16 @@ indata<-list(alpha = alpha, emis = emis, alpha_sub = alpha_sub, press = press, W
 
 Tc_init<-Tairf(1) # set initial Tc as air temperature
 
+
 Tbs_ode <- as.data.frame(ode(y = Tc_init, t = t, func = onelump_var, parms = indata))
 colnames(Tbs_ode) <- c('time', 'Tc', 'Tcf', 'tau', 'dTdt')
 Tbs_ode$time <- Tbs_ode$time / 3600 # convert to hours
 
-with(Tbs_ode, plot(Tc ~ time, type = 'l', col = '1', ylim = c(0, 60), ylab='Temperature, °C',xlab = 'hour of simulation'))
+with(Tbs_ode, plot(Tc ~ time, type = 'l', col = '1', ylim = c(5, 50), ylab='Temperature, °C',xlab = 'hour of simulation'))
 #with(Tbs_ode, points(Tc ~ time, type = 'l', lwd=2))
 # with(Tbs_ode, points(Tcf ~ time, type = 'l', col = 'blue'))
 points(Tairf(time) ~ hours, type = 'l', col = 'red', lty = 2)
-legend(75,60, c("Tc", "Tair"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("black", "red"))
+legend(35,50, c("Tc", "Tair"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("black", "red"))
 abline(h = 40)
 
 Tb <- seq(1, nrow(tl))
@@ -233,3 +251,4 @@ tl <- cbind(tl, Tb)
 
 path1 <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\Tb_first\\TLCRP0", s, ".csv")
 write.csv(tl, path1)
+
