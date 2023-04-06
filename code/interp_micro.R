@@ -28,14 +28,14 @@ interp_micro <- function(metout, soil, shadmet, shadsoil, tl_m){
     j <- j + j_add
   }
   
-  metout_new <- metout_new[!(metout_new$dates > max(metout$dates)),]
+  # metout_new <- metout_new[!(metout_new$dates > max(metout$dates)),]
   
   
   for (z in colnames(metout_new)){
     metout_new[, z] <- na.approx(metout_new[,z])
   }
   
-  tl_m <- tl_m[!(tl_m$date_time > max(metout[,'dates'])), ]
+  # tl_m <- tl_m[!(tl_m$date_time > max(metout[,'dates'])), ]
   metout_new$dates <- tl_m$date_time
   
   if((tl_m[2,1] - tl_m[1,1]) == 1){
@@ -75,7 +75,7 @@ interp_micro <- function(metout, soil, shadmet, shadsoil, tl_m){
     j <- j + j_add
   }
   
-  soil_new <- soil_new[!(soil_new$dates > max(soil$dates)),]
+  # soil_new <- soil_new[!(soil_new$dates > max(soil$dates)),]
   
   
   for (z in colnames(soil_new)){
@@ -107,7 +107,7 @@ interp_micro <- function(metout, soil, shadmet, shadsoil, tl_m){
     j <- j + j_add
   }
   
-  shadmet_new <- shadmet_new[!(shadmet_new$dates > max(shadmet$dates)),]
+  # shadmet_new <- shadmet_new[!(shadmet_new$dates > max(shadmet$dates)),]
   
   
   for (z in colnames(shadmet_new)){
@@ -139,7 +139,7 @@ interp_micro <- function(metout, soil, shadmet, shadsoil, tl_m){
     j <- j + j_add
   }
   
-  shadsoil_new <- shadsoil_new[!(shadsoil_new$dates > max(shadsoil$dates)),]
+  # shadsoil_new <- shadsoil_new[!(shadsoil_new$dates > max(shadsoil$dates)),]
   
   
   for (z in colnames(shadsoil_new)){
