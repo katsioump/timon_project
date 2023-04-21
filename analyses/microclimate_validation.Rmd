@@ -134,7 +134,7 @@ year(tsoil_sun_buried$datetime) <- 2022
 ```
 
 ```{r, out.width="100%", echo=F}
-source("../code/aux_functions.R") # To calculate RMSEs
+source("../code/rmse_calc.R") # To calculate RMSEs
 
 # plot
 par(mfrow=c(3,1), mar=c(2.5, 4, 0.5, 0.1))
