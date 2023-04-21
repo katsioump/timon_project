@@ -5,18 +5,25 @@ library(NicheMapR)
 library(zoo)
 library(stringr)
 library(lubridate)
-
-# load(file='weatherIVILAR12_hourly.RData')
-# weather <- weather_h
-# weather <- weather[weather$date >= (tl[1, 'date_time'] + 3600) & weather$date <= (tl[nrow(tl), 'date_time'] + 3600), ]
+library(dplyr)
 
 
-# source("micro_custom.R")
-# micro_out <- micro_custom(41.1073, -8.5898, 230, weather, th=F, habitat='soil', slope=0, azmuth=180)
+# Light reference datalogger data
+light_all <- read.csv(file = "C:/Users/Katerina/Desktop/mesocosms/obs/LIGHT_all.csv", head = T)
+light_all$date_time <- strptime(light_all$date_time, format = "%Y-%m-%d %H:%M:%OS", tz = "UTC")
+light_all$date_time <- as.POSIXct(light_all$date_time)
+light_all[,'date_time'] <- light_all[,'date_time'] - 3600
+
+light_all <- light_all %>%
+  mutate(lux = ifelse((light_all$date_time>="2022-06-09") & (light_all$date_time<="2022-06-16"), 
+                      sqrt(10^(9.8-2*log10(51000*Sensor.Raw/(1023-Sensor.Raw)))), 
+                      sqrt(10^(9.8-2*log10(51000*Sensor.Raw/(1023-Sensor.Raw))))))
 
 # Microclimate model
-source("micro_ncep_fun.R")
-micro <- micro_ncep_fun()
+load("micro_ncep.Rda")
+
+############
+## To execute code for different animals start from here, changing sensor number (n_sensor) and body weight (Ww_g)
 
 metout <- data.frame(micro$metout)
 shadmet <- data.frame(micro$shadmet)
@@ -28,50 +35,45 @@ shadmet <- cbind(dates, shadmet)
 soil <- cbind(dates, soil)
 shadsoil <- cbind(dates, shadsoil)
 
-
-# Light reference datalogger data
-light_all <- read.csv(file = "C:/Users/Katerina/Desktop/mesocosms/obs/LIGHT_all.csv", head = T)
-light_all$date_time <- strptime(light_all$date_time, format = "%Y-%m-%d %H:%M:%OS")
-light_all$date_time <- as.POSIXct(light_all$date_time)
-light_all$Sensor.Raw <- 1000 - light_all$Sensor.Raw
-light_all$light <- (light_all$Sensor.Raw * 100)/1000
-
-#################
-
 # Animal datalogger data
-n_sensor <- 5
+n_sensor <- 7
 s <- str_pad(n_sensor, 2, pad = "0")
 path <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP0", s, ".csv")
 tl <- read.csv(file = path, head = TRUE)
 tl <- subset(tl, select = -c(1))
+tl <- subset(tl, select = -c(lux, lux_max, rel_light))
 
-tl$date_time <- strptime(tl$date_time, format = "%Y-%m-%d %H:%M:%OS")
+tl$date_time <- strptime(tl$date_time, format = "%Y-%m-%d %H:%M:%OS", tz = "UTC")
 tl$date_time <- as.POSIXct(tl$date_time)
+tl[,'date_time'] <- tl[,'date_time'] - 3600
 
 # cut light reference data to the simulation period of the animal
-light_all <- light_all[light_all$date_time >= tl[1, 'date_time'] & light_all$date_time <= tl[nrow(tl), 'date_time'], ]
-light_all <- head(light_all, -(nrow(light_all) - nrow(tl)))
+light <- light_all[light_all$date_time >= tl[1, 'date_time'] & light_all$date_time <= tl[nrow(tl), 'date_time'], ]
+light <- head(light, -(nrow(light) - nrow(tl)))
 
-tl$Sensor.Raw <- 1000 - tl$Sensor.Raw
-tl$light <- (tl$Sensor.Raw * 100)/1000
-tl$light_open <- light_all$light
+tl$Sensor.Raw[tl$Sensor.Raw == 0] <- 2
+tl <- tl %>%
+  mutate(light = sqrt(10^(9.8-2*log10(51000*Sensor.Raw/(1023-Sensor.Raw)))))
 
-tl <- subset(tl, select = -c(lux, lux_max, rel_light))
+
+tl$light_open <- light$lux
+
 tl$rel_light <- (tl$light * 100)/tl$light_open
 
-# with(tl, plot(light_open ~ date_time))
-# with(tl, points(light ~ date_time, col = 'red'))
-# with(tl, points(rel_light ~ date_time, col = 'blue'))
+
+with(tl, plot(light_open ~ date_time))
+with(tl, points(light ~ date_time, col = 'red'))
+
+with(tl, plot(rel_light ~ date_time))
+
+tl$rel_light[tl$rel_light > 100] <- 100
 
 
-# metout <- as.data.frame(micro_out[1]) 
 metout <- metout[metout$dates >= (tl[1, 'date_time']) & metout$dates <= (tl[nrow(tl), 'date_time']), ]
-# soil <- as.data.frame(micro_out[2])
 soil <- soil[soil$dates >= (tl[1, 'date_time']) & soil$dates <= (tl[nrow(tl), 'date_time']), ]
-# shadmet <- as.data.frame(micro_out[3])
 shadmet <- shadmet[shadmet$dates >= (tl[1, 'date_time']) & shadmet$dates <= (tl[nrow(tl), 'date_time']), ]
-# shadsoil <- as.data.frame(micro_out[4])
 shadsoil <- shadsoil[shadsoil$dates >= (tl[1, 'date_time']) & shadsoil$dates <= (tl[nrow(tl), 'date_time']), ]
+
 
 
 par(mfrow=c(3,1), mar=c(2.5, 4, 0.5, 0.1))
@@ -174,7 +176,7 @@ fatosb <- 0.4 # solar configuration factor to substrate, -
 alpha <- 0.9 # animal solar absorptivity, -
 emis <- 0.95 # emisivity of skin, -
 ########### change according to animal
-Ww_g <- 61.7 # weight, g
+Ww_g <- 81.1 # weight, g
 ###########
 alpha_sub <- 0.8 # substrate solar absorptivity, -
 press <- 101325 # air pressure, Pa
@@ -251,4 +253,6 @@ tl <- cbind(tl, Tb)
 
 path1 <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\Tb_first\\TLCRP0", s, ".csv")
 write.csv(tl, path1)
+
+
 
