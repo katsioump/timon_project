@@ -15,10 +15,6 @@ interp_micro <- function(metout, soil, shadmet, shadsoil, tl_m){
   
   metout_new$dates <- tl_m$date_time
   
-  metout$dates <- strptime(metout$dates, format = "%Y-%m-%d %H:%M:%S")
-  metout$dates <- as.POSIXct(metout$dates)
-  metout_new$dates <- strptime(metout_new$dates, format = "%Y-%m-%d %H:%M:%S")
-  metout_new$dates <- as.POSIXct(metout_new$dates)
   
   j <- 1
   for (i in 1:nrow(metout)) {
@@ -28,14 +24,14 @@ interp_micro <- function(metout, soil, shadmet, shadsoil, tl_m){
     j <- j + j_add
   }
   
-  # metout_new <- metout_new[!(metout_new$dates > max(metout$dates)),]
+  metout_new <- metout_new[!(metout_new$dates > max(metout$dates)),]
   
   
   for (z in colnames(metout_new)){
     metout_new[, z] <- na.approx(metout_new[,z])
   }
   
-  # tl_m <- tl_m[!(tl_m$date_time > max(metout[,'dates'])), ]
+  tl_m <- tl_m[!(tl_m$date_time > max(metout[,'dates'])), ]
   metout_new$dates <- tl_m$date_time
   
   if((tl_m[2,1] - tl_m[1,1]) == 1){
