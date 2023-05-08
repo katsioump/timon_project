@@ -10,14 +10,18 @@ library(dplyr)
 
 # Light reference datalogger data
 light_all <- read.csv(file = "C:/Users/Katerina/Desktop/mesocosms/obs/LIGHT_all.csv", head = T)
+light_all <- na.omit(light_all)
 light_all$date_time <- strptime(light_all$date_time, format = "%Y-%m-%d %H:%M:%OS", tz = "UTC")
 light_all$date_time <- as.POSIXct(light_all$date_time)
 light_all[,'date_time'] <- light_all[,'date_time'] - 3600
 
+#light_all <- light_all %>%
+#  mutate(lux = ifelse((light_all$date_time>="2022-06-09") & (light_all$date_time<="2022-06-16"), 
+#                      sqrt(10^(9.8-2*log10(51000*Sensor.Raw/(1023-Sensor.Raw)))), 
+#                      sqrt(10^(9.8-2*log10(51000*Sensor.Raw/(1023-Sensor.Raw))))))
+
 light_all <- light_all %>%
-  mutate(lux = ifelse((light_all$date_time>="2022-06-09") & (light_all$date_time<="2022-06-16"), 
-                      sqrt(10^(9.8-2*log10(51000*Sensor.Raw/(1023-Sensor.Raw)))), 
-                      sqrt(10^(9.8-2*log10(51000*Sensor.Raw/(1023-Sensor.Raw))))))
+  mutate(lux = sqrt(10^(9.8-2*log10(51000*Sensor.Raw/(1023-Sensor.Raw)))))
 
 # Microclimate model
 load("micro_ncep.Rda")
@@ -36,20 +40,30 @@ soil <- cbind(dates, soil)
 shadsoil <- cbind(dates, shadsoil)
 
 # Animal datalogger data
-n_sensor <- 7
+n_sensor <- 16
 s <- str_pad(n_sensor, 2, pad = "0")
 path <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP0", s, ".csv")
 tl <- read.csv(file = path, head = TRUE)
 tl <- subset(tl, select = -c(1))
 tl <- subset(tl, select = -c(lux, lux_max, rel_light))
 
+### !! only for TLCRP016 (one row has an NA value for temp and humidity):
+# tl$TemperatureC <- na.approx(tl$TemperatureC)
+# tl$Humidity <- na.approx(tl$Humidity)
+# tl$rel_temp <- na.approx(tl$rel_temp)
+
+tl <- na.omit(tl)
+
 tl$date_time <- strptime(tl$date_time, format = "%Y-%m-%d %H:%M:%OS", tz = "UTC")
 tl$date_time <- as.POSIXct(tl$date_time)
 tl[,'date_time'] <- tl[,'date_time'] - 3600
+tl <- tl[tl$date_time >= ceiling_date(tl[1, 'date_time'], "hour"), ]
+
 
 # cut light reference data to the simulation period of the animal
 light <- light_all[light_all$date_time >= tl[1, 'date_time'] & light_all$date_time <= tl[nrow(tl), 'date_time'], ]
-light <- head(light, -(nrow(light) - nrow(tl)))
+
+
 
 tl$Sensor.Raw[tl$Sensor.Raw == 0] <- 2
 tl <- tl %>%
@@ -61,10 +75,10 @@ tl$light_open <- light$lux
 tl$rel_light <- (tl$light * 100)/tl$light_open
 
 
-with(tl, plot(light_open ~ date_time))
-with(tl, points(light ~ date_time, col = 'red'))
+# with(tl, plot(light_open ~ date_time))
+# with(tl, points(light ~ date_time, col = 'red'))
 
-with(tl, plot(rel_light ~ date_time))
+# with(tl, plot(rel_light ~ date_time, type = "l"))
 
 tl$rel_light[tl$rel_light > 100] <- 100
 
@@ -75,30 +89,28 @@ shadmet <- shadmet[shadmet$dates >= (tl[1, 'date_time']) & shadmet$dates <= (tl[
 shadsoil <- shadsoil[shadsoil$dates >= (tl[1, 'date_time']) & shadsoil$dates <= (tl[nrow(tl), 'date_time']), ]
 
 
+# par(mfrow=c(3,1), mar=c(2.5, 4, 0.5, 0.1))
 
-par(mfrow=c(3,1), mar=c(2.5, 4, 0.5, 0.1))
+# with(soil, plot(D0cm ~ dates, type = 'l', col = 'red', ylab='Soil temperature, °C'))
+# with(shadsoil, points(D0cm ~ dates, type = 'l'))
+# legend("topleft", inset=c(0.75,0.05), c("Soil", "Soil shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("red", "black"))
 
-with(soil, plot(D0cm ~ dates, type = 'l', col = 'red', ylab='Soil temperature, °C'))
-with(shadsoil, points(D0cm ~ dates, type = 'l'))
-legend("topleft", inset=c(0.75,0.05), c("Soil", "Soil shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("red", "black"))
+# with(metout, plot(TSKYC ~ dates, type = 'l', col = 'blue', ylab='Sky temperature, °C', ylim = c(0, 20)))
+# with(shadmet, points(TSKYC ~ dates, type = 'l'))
+# legend("topleft", inset=c(0.75,0.05), c("Clear sky", "Sky shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("blue", "black"))
 
-with(metout, plot(TSKYC ~ dates, type = 'l', col = 'blue', ylab='Sky temperature, °C', ylim = c(0, 20)))
-with(shadmet, points(TSKYC ~ dates, type = 'l'))
-legend("topleft", inset=c(0.75,0.05), c("Clear sky", "Sky shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("blue", "black"))
+# with(metout, plot(SOLR ~ dates, type = 'l', col = 'red', ylab='Solar radiation'))
+# with(shadmet, points(SOLR ~ dates, type = 'l'))
+# legend("topleft", inset=c(0.75,0.05), c("Soil", "Soil shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("red", "black"))
 
-with(metout, plot(SOLR ~ dates, type = 'l', col = 'red', ylab='Solar radiation'))
-with(shadmet, points(SOLR ~ dates, type = 'l'))
-legend("topleft", inset=c(0.75,0.05), c("Soil", "Soil shadow"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("red", "black"))
-
-dev.off()
+# dev.off()
 
 
 ###################################################################
 
-
+tl <- tl[!(tl$date_time > (max(metout$dates))), ]
 tl_m <- subset(tl, select = c('date_time', 'TemperatureC', 'air_temp', 'rel_light'))
-tl_m <- na.omit(tl_m)
-tl_m <- tl_m[!(tl_m$date_time > (max(metout$dates))), ]
+
 
 # tl_min <- tl_m[0,]
 # i <- 1
@@ -176,7 +188,7 @@ fatosb <- 0.4 # solar configuration factor to substrate, -
 alpha <- 0.9 # animal solar absorptivity, -
 emis <- 0.95 # emisivity of skin, -
 ########### change according to animal
-Ww_g <- 81.1 # weight, g
+Ww_g <- 77.4 # weight, g
 ###########
 alpha_sub <- 0.8 # substrate solar absorptivity, -
 press <- 101325 # air pressure, Pa
@@ -234,25 +246,24 @@ Tbs_ode <- as.data.frame(ode(y = Tc_init, t = t, func = onelump_var, parms = ind
 colnames(Tbs_ode) <- c('time', 'Tc', 'Tcf', 'tau', 'dTdt')
 Tbs_ode$time <- Tbs_ode$time / 3600 # convert to hours
 
-with(Tbs_ode, plot(Tc ~ time, type = 'l', col = '1', ylim = c(5, 50), ylab='Temperature, °C',xlab = 'hour of simulation'))
+with(Tbs_ode, plot(Tc ~ time, type = 'l', col = '1', ylim = c(10, 55), ylab='Temperature, °C',xlab = 'hour of simulation'))
 #with(Tbs_ode, points(Tc ~ time, type = 'l', lwd=2))
 # with(Tbs_ode, points(Tcf ~ time, type = 'l', col = 'blue'))
 points(Tairf(time) ~ hours, type = 'l', col = 'red', lty = 2)
-legend(35,50, c("Tc", "Tair"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("black", "red"))
-abline(h = 40)
+legend(42, 50, c("Tb", "TAloc"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col = c("black", "red"))
 
-Tb <- seq(1, nrow(tl))
-Tb[1:length(Tb)] <- NA
-j <- 1
-for (i in 1:nrow(tl_m)){
-  Tb[j] <- Tbs_ode[i, 'Tc']
-  j <- j + 10
-}
+# Tb <- seq(1, nrow(tl))
+# Tb[1:length(Tb)] <- NA
+# j <- 1
+# for (i in 1:nrow(tl_m)){
+#   Tb[j] <- Tbs_ode[i, 'Tc']
+#   j <- j + 10
+# }
 
+
+Tb <- Tbs_ode$Tc
 tl <- cbind(tl, Tb)
 
 path1 <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\Tb_first\\TLCRP0", s, ".csv")
 write.csv(tl, path1)
-
-
 
