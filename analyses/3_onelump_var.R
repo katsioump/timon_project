@@ -40,12 +40,13 @@ soil <- cbind(dates, soil)
 shadsoil <- cbind(dates, shadsoil)
 
 # Animal datalogger data
-n_sensor <- 16
+n_sensor <- 17
 s <- str_pad(n_sensor, 2, pad = "0")
 path <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP0", s, ".csv")
 tl <- read.csv(file = path, head = TRUE)
 tl <- subset(tl, select = -c(1))
 tl <- subset(tl, select = -c(lux, lux_max, rel_light))
+tl$weight <- 56.4 ## ! according to animal 
 
 ### !! only for TLCRP016 (one row has an NA value for temp and humidity):
 # tl$TemperatureC <- na.approx(tl$TemperatureC)
@@ -188,7 +189,7 @@ fatosb <- 0.4 # solar configuration factor to substrate, -
 alpha <- 0.9 # animal solar absorptivity, -
 emis <- 0.95 # emisivity of skin, -
 ########### change according to animal
-Ww_g <- 77.4 # weight, g
+Ww_g <- 50.6 # weight, g
 ###########
 alpha_sub <- 0.8 # substrate solar absorptivity, -
 press <- 101325 # air pressure, Pa
@@ -263,6 +264,7 @@ legend(42, 50, c("Tb", "TAloc"), lty = c(1, 1, 2), lwd = c(2.5, 2.5, 2.5), col =
 
 Tb <- Tbs_ode$Tc
 tl <- cbind(tl, Tb)
+
 
 path1 <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\Tb_first\\TLCRP0", s, ".csv")
 write.csv(tl, path1)
