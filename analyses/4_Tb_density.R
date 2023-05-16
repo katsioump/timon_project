@@ -2,13 +2,12 @@ library(ggplot2)
 library(stringr)
 library(lubridate)
 
-datetime <- vector()
-Tb <- vector()
-code <- vector()
-group <- vector()
-move <- vector()
-weight <- vector()
-tl_all <- data.frame(code, group, datetime, Tb, move, weight)
+tl_all <- data.frame(code = character(),
+                     group = character(),
+                     datetime = as.POSIXct(character()),
+                     Tb = integer(), 
+                     move = character(), 
+                     weight = integer())
   
 for (i in c(5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25)){
   s <- str_pad(i, 2, pad = "0")
@@ -51,10 +50,12 @@ ggplot(tl_all_night, aes(x = Tb, color = move)) +
   geom_density() +
   facet_wrap(code~group, ncol=4)
 
-# Density 2d with body weight
+# Density 2d with body weight for 
+
+active <- which(tl_all$move == "mobile")
+tl_all_active <- tl_all[active,]
 
 library(viridis)
-ggplot(tl_all_night, aes(x = Tb, y = weight)) +
+ggplot(tl_all_active, aes(x = Tb, y = weight)) +
   stat_density2d(aes(fill = after_stat(density)), contour = F, geom = 'tile') +
   scale_fill_viridis()
-
