@@ -18,7 +18,7 @@ source("C:\\Users\\Katerina\\Documents\\Master thesis\\R scripts\\get_tmax.R")
 source("C:\\Users\\Katerina\\Documents\\Master thesis\\R scripts\\get_tmin.R")
 
 
-for (i in c(5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25)){
+for (i in c(5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25)){
   s <- str_pad(i, 2, pad = "0")
   path <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\Tb_first\\TLCRP0", s, ".csv")
   tl <- read.csv(file = path, head = TRUE)
@@ -62,15 +62,15 @@ for (i in c(5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25)){
                                                upper = get_upper_lims(.x$temp, .x$rate, model_name = 'gaussian_1987'),
                                                supp_errors = 'Y',
                                                convergence_count = FALSE)),
-           joehnk = map(data, ~nls_multstart(rate~joehnk_2008(temp = temp, rmax, topt, a, b, c),
-                                             data = .x,
-                                             iter = c(4,4,4,4, 4),
-                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'joehnk_2008') - 10,
-                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'joehnk_2008') + 10,
-                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'joehnk_2008'),
-                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'joehnk_2008'),
-                                             supp_errors = 'Y',
-                                             convergence_count = FALSE)),
+           beta = map(data, ~nls_multstart(rate~beta_2012(temp = temp, a, b, c, d, e),
+                                           data = .x,
+                                           iter = c(6,6,6,6,6),
+                                           start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'beta_2012') - 10,
+                                           start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'beta_2012') + 10,
+                                           lower = get_lower_lims(.x$temp, .x$rate, model_name = 'beta_2012'),
+                                           upper = get_upper_lims(.x$temp, .x$rate, model_name = 'beta_2012'),
+                                           supp_errors = 'Y',
+                                           convergence_count = FALSE)),
            rezende = map(data, ~nls_multstart(rate~rezende_2019(temp = temp, q10, a,b,c),
                                               data = .x,
                                               iter = c(4,4,4,4),
@@ -107,15 +107,6 @@ for (i in c(5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25)){
                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'spain_1982'),
                                             supp_errors = 'Y',
                                             convergence_count = FALSE)),
-           thomas1 = map(data, ~nls_multstart(rate~thomas_2012(temp = temp, a,b,c,topt),
-                                              data = .x,
-                                              iter = c(4,4,4,4),
-                                              start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'thomas_2012') - 1,
-                                              start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'thomas_2012') + 2,
-                                              lower = get_lower_lims(.x$temp, .x$rate, model_name = 'thomas_2012'),
-                                              upper = get_upper_lims(.x$temp, .x$rate, model_name = 'thomas_2012'),
-                                              supp_errors = 'Y',
-                                              convergence_count = FALSE)),
            weibull = map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a,topt,b,c),
                                               data = .x,
                                               iter = c(4,4,4,4),
@@ -167,13 +158,14 @@ for (i in c(5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25)){
     labs(x = 'Body temperature (ºC)',
          y = 'VeDBA (g)',
          title = paste0('Fits of selected models for TLCRP0', s)) +
-    geom_text(data = data, aes(label=AIC), x = 50/100*(max(tl$Tb)), y = 98/100*(max(tl$VeDBA)),
+    geom_text(data = data, aes(label=AIC), x = 60/100*(max(tl$Tb)), y = 98/100*(max(tl$VeDBA)),
                size = 5) +
-    theme(text=element_text(size=20)) +
+    theme(text=element_text(size=20),
+          legend.position = c(.1, .9)) +
     geom_hline(aes(yintercept = 0), linetype = 2)
   
   
-  ggsave(paste0("C:/Users/Katerina/Documents/Master thesis/some graphs/TPC models_VeDBA/TLCRP0", s, ".png"), width = 20, height = 10.4)
+  ggsave(paste0("C:/Users/Katerina/Documents/Master thesis/some graphs/TPCs_new/TLCRP0", s, ".png"), width = 20, height = 10.4)
   
   ## Model selection
   ## In this instance, we will use AICc score to compare between models. For a model selection approach, the model with the lowest AICc score is chosen as the model that best supports the data. In this instance, it is the Sharpe-Schoolfield model.
