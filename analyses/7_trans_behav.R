@@ -26,7 +26,7 @@ geom <- 2 # shape, -
 loc <- c(-8.5898, 41.1073)
 maxshade <- 90
 
-load("C:/Users/Katerina/Documents/Master thesis/micro/micro_ncep_2022.Rda")
+load("micro_ncep.Rda")
 
 metout <- as.data.frame(micro$metout) # above ground microclimatic conditions, min shade
 soil <- as.data.frame(micro$soil) # soil temperatures, minimum shade
@@ -44,7 +44,7 @@ press <- 101325 * ((1 - (0.0065 * elevation / 288)) ^ (1 / 0.190284))
 
 ########################
 
-mons <- c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+mons <- c("May", "June")
 DOYs <- unique(metout$DOY)
 months <- unique(month(metout$dates))
 
@@ -69,7 +69,7 @@ for(i in 1:1){
                        CT_max = CT_max, T_B_min = T_B_min, geom = geom, shape_b = shape_b, shape_c = shape_c,
                        rho_body = rho_body, k_flesh = k_flesh, q = q, lump = 1,
                        metout = metout_in, shadmet = shadmet_in, soil = soil_in, shadsoil = shadsoil_in,
-                       press = press, alpha_sub = 1 - micro$REFL)
+                       press = press, alpha_sub = 1 - micro$REFL, shade = maxshade)
   
   results <- as.data.frame(trans$day_results)
   sum_stats <- as.data.frame(trans$sum_stats)
