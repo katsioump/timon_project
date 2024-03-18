@@ -22,8 +22,9 @@ trans_fun <- function (Tc_init = rep(20, 60), Ts_init = Tc_init + 0.1, To_init =
                                                             3], shadmet[, 12:14], shadmet[, 5])
   colnames(micro_shd) <- names
   nhs <- nrow(metout_in)
-  time <- seq(0, 60 * nhs, 60)
-  time <- time * 60
+  time <- seq(0, nhs)
+  # time <- seq(0, 60 * nhs, 60)
+  # time <- time * 60
   Qsolf_sun <- approxfun(time, c(micro_sun[, 8], (micro_sun[1, 
                                                             8] + micro_sun[24, 8])/2), rule = 2)
   Tradf_sun <- approxfun(time, rowMeans(cbind(c(micro_sun[, 
@@ -45,10 +46,12 @@ trans_fun <- function (Tc_init = rep(20, 60), Ts_init = Tc_init + 0.1, To_init =
   Tairf_shd <- approxfun(time, c(micro_shd[, 3], (micro_shd[1, 
                                                             3] + micro_shd[24, 3])/2), rule = 2)
   Zenf <- approxfun(time, c(micro_sun[, 7], 90), rule = 2)
-  times_sec <- seq(0, 3600 * nhs, 3600)
-  times <- seq(0, 3600 * nhs, 10)
-  times <- times[1:(length(times) - 1)]
-  hours <- times/3600
+  times_sec <- seq(0, nhs)
+  # times_sec <- seq(0, 3600 * nhs, 3600)
+  # times <- seq(0, nhs, 10)
+  # times <- times[1:(length(times) - 1)]
+  times <- time
+  hours <- time/3600
   times_orig <- times
   emerge <- function(t, y, pars) {
     if (Zenf(t) != 90 & y[1] > T_B_min) {
@@ -212,11 +215,11 @@ trans_fun <- function (Tc_init = rep(20, 60), Ts_init = Tc_init + 0.1, To_init =
     Te <- rep(NA, length(times))
   }
   if (lump == 1) {
-    indata$c_body <- 3073
+    indata$c_body <- 3762
   }
   if (lump == 2) {
-    indata$c_body_inner <- 3073
-    indata$c_body_outer <- 3073
+    indata$c_body_inner <- 3762
+    indata$c_body_outer <- 3762
   }
   if (lump == 1) {
     Tb_open <- ode(y = Tc_init, times = times, func = onelump_var, 
@@ -536,8 +539,7 @@ trans_fun <- function (Tc_init = rep(20, 60), Ts_init = Tc_init + 0.1, To_init =
   active <- active$x/(interval/24) * 60
   y <- rle(day_results$active)
   
-  max_foraging_bout <- max((y$lengths[y$values == 1]))/(interval/24) * 
-    60
+  max_foraging_bout <- max((y$lengths[y$values == 1]))/(interval/24) * 60
   z <- rle(day_results$state)
   morning.bask <- z$lengths[z$values == 1][1]/(interval/24) * 
     60
@@ -677,3 +679,4 @@ trans_fun <- function (Tc_init = rep(20, 60), Ts_init = Tc_init + 0.1, To_init =
   return(list(day_results = day_results, sum_stats = sum_stats, 
               act_window = act_window))
 }
+
