@@ -10,7 +10,7 @@ library(lubridate)
 Ww_g <- 61.7 # wet weight (g)
 Usrhyt <- 0.01 # height of animal (mid-point) above ground (m)
 alpha <- 0.9 # solar absorptivity (-)
-T_F_min <- 36.21927579 # minimum foraging Tb (deg C)
+T_F_min <- 20 # 36.21927579 # minimum foraging Tb (deg C)
 T_F_max <- 38.65927579 # maximum foraging Tb (deg C)
 T_B_min <- 13.57565549 # basking Tb, moving from shade to sun (deg C)
 CT_max <- 45 # critical thermal maximum (deg C)
@@ -44,14 +44,32 @@ press <- 101325 * ((1 - (0.0065 * elevation / 288)) ^ (1 / 0.190284))
 
 ########################
 
-mons <- c("May", "June")
 DOYs <- unique(metout$DOY)
 months <- unique(month(metout$dates))
 
-source("C:/Users/Katerina/Documents/Master thesis/model/trans_fun.R")
+source("C:/Users/Katerina/Documents/Master thesis/model/trans_fun2.R")
+
+# try1 
+micro_test <- micro_global(loc = loc)
+micro <- micro_test
+
+metout <- as.data.frame(micro$metout) # above ground microclimatic conditions, min shade
+soil <- as.data.frame(micro$soil) # soil temperatures, minimum shade
+shadmet <- as.data.frame(micro$shadmet) # above ground microclimatic conditions, min shade
+shadsoil <- as.data.frame(micro$shadsoil) # soil temperatures, minimum shade
+dates <- micro$dates
+metout <- cbind(metout, dates)
+shadmet <- cbind(shadmet, dates)
+soil <- cbind(soil, dates)
+shadsoil <- cbind(shadsoil, dates)
+# get air pressure
+elevation <- micro$elev
+press <- 101325 * ((1 - (0.0065 * elevation / 288)) ^ (1 / 0.190284))
+
+
 
 # loop through each month and run transient model with behaviour
-for(i in 1:1){
+for(i in 1:12){
   
   # subset current month
  # metout_in <- subset(metout, month(metout$dates) == months[i]) 
@@ -65,7 +83,7 @@ for(i in 1:1){
   shadsoil_in <- subset(shadmet, DOY == DOYs[i])
   
   # run transient behavioural simulation
-  trans <- trans_fun(Ww_g = Ww_g, alpha = alpha, T_F_min = T_F_min, T_F_max = T_F_max,
+  trans <- trans_fun2(Ww_g = Ww_g, alpha = alpha, T_F_min = T_F_min, T_F_max = T_F_max,
                        CT_max = CT_max, T_B_min = T_B_min, geom = geom, shape_b = shape_b, shape_c = shape_c,
                        rho_body = rho_body, k_flesh = k_flesh, q = q, lump = 1,
                        metout = metout_in, shadmet = shadmet_in, soil = soil_in, shadsoil = shadsoil_in,
