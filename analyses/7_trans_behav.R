@@ -26,26 +26,11 @@ geom <- 2 # shape, -
 loc <- c(-8.5898, 41.1073)
 maxshade <- 90
 
-load("micro_ncep.Rda")
-
-metout <- as.data.frame(micro$metout) # above ground microclimatic conditions, min shade
-soil <- as.data.frame(micro$soil) # soil temperatures, minimum shade
-shadmet <- as.data.frame(micro$shadmet) # above ground microclimatic conditions, min shade
-shadsoil <- as.data.frame(micro$shadsoil) # soil temperatures, minimum shade
-dates <- micro$dates
-metout <- cbind(metout, dates)
-shadmet <- cbind(shadmet, dates)
-soil <- cbind(soil, dates)
-shadsoil <- cbind(shadsoil, dates)
-# get air pressure
-elevation <- micro$elev
-press <- 101325 * ((1 - (0.0065 * elevation / 288)) ^ (1 / 0.190284))
+# load("micro_ncep.Rda")
 
 
 ########################
 
-DOYs <- unique(metout$DOY)
-months <- unique(month(metout$dates))
 
 source("C:/Users/Katerina/Documents/Master thesis/model/trans_fun2.R")
 
@@ -66,7 +51,8 @@ shadsoil <- cbind(shadsoil, dates)
 elevation <- micro$elev
 press <- 101325 * ((1 - (0.0065 * elevation / 288)) ^ (1 / 0.190284))
 
-
+DOYs <- unique(metout$DOY)
+months <- unique(month(metout$dates))
 
 # loop through each month and run transient model with behaviour
 for(i in 1:12){
