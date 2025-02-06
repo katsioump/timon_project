@@ -31,11 +31,8 @@ maxshade <- 90
 
 ########################
 
-
-source("C:/Users/Katerina/Documents/Master thesis/model/trans_fun2.R")
-
 # try1 
-micro_test <- micro_global(loc = loc)
+micro_test <- micro_global(loc = loc, timeinterval = 12)
 micro <- micro_test
 
 metout <- as.data.frame(micro$metout) # above ground microclimatic conditions, min shade
@@ -51,8 +48,8 @@ shadsoil <- cbind(shadsoil, dates)
 elevation <- micro$elev
 press <- 101325 * ((1 - (0.0065 * elevation / 288)) ^ (1 / 0.190284))
 
+mons <- c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
 DOYs <- unique(metout$DOY)
-months <- unique(month(metout$dates))
 
 # loop through each month and run transient model with behaviour
 for(i in 1:12){
@@ -69,7 +66,7 @@ for(i in 1:12){
   shadsoil_in <- subset(shadmet, DOY == DOYs[i])
   
   # run transient behavioural simulation
-  trans <- trans_fun2(Ww_g = Ww_g, alpha = alpha, T_F_min = T_F_min, T_F_max = T_F_max,
+  trans <- trans_behav(Ww_g = Ww_g, alpha = alpha, T_F_min = T_F_min, T_F_max = T_F_max,
                        CT_max = CT_max, T_B_min = T_B_min, geom = geom, shape_b = shape_b, shape_c = shape_c,
                        rho_body = rho_body, k_flesh = k_flesh, q = q, lump = 1,
                        metout = metout_in, shadmet = shadmet_in, soil = soil_in, shadsoil = shadsoil_in,
