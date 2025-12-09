@@ -139,3 +139,264 @@ mtext(text = paste0("Seasonal Activity Plot, ", if (length(loc) == 2) {
 } else {
   loc
 }, " ", Ww_g, " g"), outer = TRUE, side = 3, line = 0)
+
+### ggplot2 figures ###
+
+all_act_window$ZEN <- metout$ZEN 
+all_act_window$DOY <- metout$DOY
+night <- subset(all_act_window, ZEN == 90)
+
+foraging_sun <- subset(all_act_window, forage_sun > 0)
+
+
+night_df <- data.frame(DOY = DOYs,
+                       night_start = NA,
+                       night_end = NA)
+
+for(i in days) {
+  a <- min(which(night$DOY == i))
+  b <- max(which(night$DOY == i))
+  for (j in a:(b-1)){
+    if ((night[j, 1] + 1) != night[j+1, 1]){
+      night_df$night_start[i] <- night[j+1, 1]
+      night_df$night_end[i] <- night[j, 1]
+    }
+  }
+}
+
+for (i in 2:nrow(night_df)){
+  if (is.na(night_df[i,"night_start"])){
+    night_df[i,"night_start"] <- night_df[(i-1),"night_start"]
+    night_df[i,"night_end"] <- night_df[(i-1),"night_end"]
+  }
+}
+
+
+g1 <- ggplot() +
+  # Night 1
+  geom_ribbon(data = night_df,
+              aes(x = DOY, ymin = 0, ymax = night_end), fill = "skyblue4") +
+  
+  # Night 2
+  geom_ribbon(data = night_df,
+              aes(x = DOY, ymin = night_start, ymax = 24), fill = "skyblue4") +
+  
+  # Activity
+  geom_point(data = foraging_sun,
+             shape = 19,
+             aes(x = DOY, y = time),
+             color = "orange2", size = 0.3) +
+  
+  
+  scale_y_continuous(breaks = seq(0,24,5), limits = c(0,24), expand = c(0.01, 0.01)) +
+  scale_x_continuous(breaks = seq(0,360,100), limits = c(1,365), expand = c(0.01, 0.01)) +
+  
+  labs(title = "a              Specialist, 50 gr, 2022", #+4°C",
+       x = "Day of year", y = "Hour of day") +
+  
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 20),
+    axis.title = element_text(size = 20),
+    axis.text  = element_text(size = 20)
+  )
+
+
+#####################
+
+load("~/Master thesis/model/trans_spe_50_plus4.RData")
+
+all_stats <- cbind(DOY = days, all_stats)
+
+metout <- subset(metout, DOY %in% days)
+shadmet <- subset(shadmet, DOY %in% days)
+soil <- subset(soil, DOY %in% days)
+shadsoil <- subset(shadmet, DOY %in% days)
+
+all_act_window$ZEN <- metout$ZEN 
+all_act_window$DOY <- metout$DOY
+night <- subset(all_act_window, ZEN == 90)
+
+foraging_sun <- subset(all_act_window, forage_sun > 0)
+
+
+night_df <- data.frame(DOY = DOYs,
+                       night_start = NA,
+                       night_end = NA)
+
+for(i in days) {
+  a <- min(which(night$DOY == i))
+  b <- max(which(night$DOY == i))
+  for (j in a:(b-1)){
+    if ((night[j, 1] + 1) != night[j+1, 1]){
+      night_df$night_start[i] <- night[j+1, 1]
+      night_df$night_end[i] <- night[j, 1]
+    }
+  }
+}
+
+for (i in 2:nrow(night_df)){
+  if (is.na(night_df[i,"night_start"])){
+    night_df[i,"night_start"] <- night_df[(i-1),"night_start"]
+    night_df[i,"night_end"] <- night_df[(i-1),"night_end"]
+  }
+}
+
+
+g2 <- ggplot() +
+  # Night 1
+  geom_ribbon(data = night_df,
+              aes(x = DOY, ymin = 0, ymax = night_end), fill = "skyblue4") +
+  
+  # Night 2
+  geom_ribbon(data = night_df,
+              aes(x = DOY, ymin = night_start, ymax = 24), fill = "skyblue4") +
+  
+  # Activity
+  geom_point(data = foraging_sun,
+             shape = 19,
+             aes(x = DOY, y = time),
+             color = "orange2", size = 0.3) +
+  
+  
+  scale_y_continuous(breaks = seq(0,24,5), limits = c(0,24), expand = c(0.01, 0.01)) +
+  scale_x_continuous(breaks = seq(0,360,100), limits = c(1,365), expand = c(0.01, 0.01)) +
+  
+  labs(title = "b              Specialist, 50 gr, +4°C",
+       x = "Day of year", y = "Hour of day") +
+  
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 20),
+    axis.title = element_text(size = 20),
+    axis.text  = element_text(size = 20)
+  )
+
+#########################
+
+load("~/Master thesis/model/trans_gen_50_2022.RData")
+
+all_act_window$ZEN <- metout$ZEN 
+all_act_window$DOY <- metout$DOY
+night <- subset(all_act_window, ZEN == 90)
+
+foraging_sun <- subset(all_act_window, forage_sun > 0)
+
+
+night_df <- data.frame(DOY = DOYs,
+                       night_start = NA,
+                       night_end = NA)
+
+for(i in days) {
+  a <- min(which(night$DOY == i))
+  b <- max(which(night$DOY == i))
+  for (j in a:(b-1)){
+    if ((night[j, 1] + 1) != night[j+1, 1]){
+      night_df$night_start[i] <- night[j+1, 1]
+      night_df$night_end[i] <- night[j, 1]
+    }
+  }
+}
+
+for (i in 2:nrow(night_df)){
+  if (is.na(night_df[i,"night_start"])){
+    night_df[i,"night_start"] <- night_df[(i-1),"night_start"]
+    night_df[i,"night_end"] <- night_df[(i-1),"night_end"]
+  }
+}
+
+
+g3 <- ggplot() +
+  # Night 1
+  geom_ribbon(data = night_df,
+              aes(x = DOY, ymin = 0, ymax = night_end), fill = "skyblue4") +
+  
+  # Night 2
+  geom_ribbon(data = night_df,
+              aes(x = DOY, ymin = night_start, ymax = 24), fill = "skyblue4") +
+  
+  # Activity
+  geom_point(data = foraging_sun,
+             shape = 19,
+             aes(x = DOY, y = time),
+             color = "orange2", size = 0.3) +
+  
+  
+  scale_y_continuous(breaks = seq(0,24,5), limits = c(0,24), expand = c(0.01, 0.01)) +
+  scale_x_continuous(breaks = seq(0,360,100), limits = c(1,365), expand = c(0.01, 0.01)) +
+  
+  labs(title = "c              Generalist, 50 gr, 2022", #+4°C",
+       x = "Day of year", y = "Hour of day") +
+  
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 20),
+    axis.title = element_text(size = 20),
+    axis.text  = element_text(size = 20)
+  )
+
+
+##############
+
+load("~/Master thesis/model/trans_gen_50_plus4.RData")
+
+all_act_window$ZEN <- metout$ZEN 
+all_act_window$DOY <- metout$DOY
+night <- subset(all_act_window, ZEN == 90)
+
+
+foraging_sun <- subset(all_act_window, forage_sun > 0)
+
+
+night_df <- data.frame(DOY = DOYs,
+                       night_start = NA,
+                       night_end = NA)
+
+for(i in days) {
+  a <- min(which(night$DOY == i))
+  b <- max(which(night$DOY == i))
+  for (j in a:(b-1)){
+    if ((night[j, 1] + 1) != night[j+1, 1]){
+      night_df$night_start[i] <- night[j+1, 1]
+      night_df$night_end[i] <- night[j, 1]
+    }
+  }
+}
+
+
+for (i in 2:nrow(night_df)){
+  if (is.na(night_df[i,"night_start"])){
+    night_df[i,"night_start"] <- night_df[(i-1),"night_start"]
+    night_df[i,"night_end"] <- night_df[(i-1),"night_end"]
+  }
+}
+
+
+g4 <- ggplot() +
+  # Night 1
+  geom_ribbon(data = night_df,
+              aes(x = DOY, ymin = 0, ymax = night_end), fill = "skyblue4") +
+  # Night 2
+  geom_ribbon(data = night_df,
+              aes(x = DOY, ymin = night_start, ymax = 24), fill = "skyblue4") +
+  # Activity
+  geom_point(data = foraging_sun,
+             shape = 19,
+             aes(x = DOY, y = time),
+             color = "orange2", size = 0.3) +
+  
+  
+  scale_y_continuous(breaks = seq(0,24,5), limits = c(0,24), expand = c(0.01, 0.01)) +
+  scale_x_continuous(breaks = seq(0,360,100), limits = c(1,365), expand = c(0.01, 0.01)) +
+  
+  labs(title = "d              Generalist, 50 gr, +4°C",
+       x = "Day of year", y = "Hour of day") +
+  
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 20),
+    axis.title = element_text(size = 20),
+    axis.text  = element_text(size = 20)
+  )
+
+g_all <- grid.arrange(g1, g2, g3, g4, nrow = 2)
