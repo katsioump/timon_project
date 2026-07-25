@@ -1,25 +1,25 @@
-clean_sensor <- function(n_sensor = 15){
+acc_metrics <- function(n_sensor = 5){
   s <- str_pad(n_sensor, 2, pad = "0")
-  path <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\obs\\TLCRP0", s, ".csv")
-  tl13 <- read.csv(file = path, head = TRUE)
-  str(tl13)
+  path <- paste0("data/raw/TLCRP0", s, ".csv")
+  tl <- read.csv(file = path, head = TRUE)
+  str(tl)
   
-  tl <- subset (tl13, select = -c(1, 2, 8, 11, 13, 14))
-  #tl <- subset (tl13, select = -c(1, 7)) # for #015
-  
-  
-  tl$date_time <- paste (tl$Date, tl$Time)
-  
-  options(digits.secs = 3)
-  tl$date_time <- strptime(tl$date_time, format = "%Y-%m-%d %H:%M:%OS")
-  tl$date_time <- as.POSIXct(tl$date_time)
+  tl$date_time <- as.POSIXct(
+    paste(tl$Date, tl$Time),
+    format = "%Y-%m-%d %H:%M:%S.%OS",
+    tz = "UTC"
+  )
   
   tl$Date <- strptime(tl$Date, format = "%Y-%m-%d")
   tl$Date <- as.Date(tl$Date, format = "%Y%m%d")
   
+  # convert acceleration metric from g to m/s2 if needed
+  tl$X <- tl$X * 9.8
+  tl$Y <- tl$Y * 9.8
+  tl$Z <- tl$Z * 9.8
   
-  with(tl, plot(date_time, na.approx(TemperatureC), type='l'))
-  with(tl, plot(date_time, na.approx(Humidity), type='l'))
+  # with(tl, plot(date_time, na.approx(TemperatureC), type='l'))
+  # with(tl, plot(date_time, na.approx(Humidity), type='l'))
   
   
   # Calculate ODBA and VeDBA with a running mean of e.g., 1 second (k = 11). Should be tested with more interval lengths. 
