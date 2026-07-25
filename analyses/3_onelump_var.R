@@ -1,5 +1,3 @@
-setwd("C:/Users/Katerina/Documents/Master thesis/model")
-
 library(deSolve) # note due to some kind of bug in deSolve, it must be loaded before NicheMapR!
 library(NicheMapR)
 library(zoo)
@@ -9,7 +7,7 @@ library(dplyr)
 
 
 # Light reference datalogger data
-light_all <- read.csv(file = "C:/Users/Katerina/Desktop/mesocosms/obs/LIGHT_all.csv", head = T)
+light_all <- read.csv(file = "data/raw/LIGHT_all.csv", head = T)
 light_all <- na.omit(light_all)
 light_all$date_time <- strptime(light_all$date_time, format = "%Y-%m-%d %H:%M:%OS", tz = "UTC")
 light_all$date_time <- as.POSIXct(light_all$date_time)
@@ -24,10 +22,10 @@ light_all <- light_all %>%
   mutate(lux = sqrt(10^(9.8-2*log10(51000*Sensor.Raw/(1023-Sensor.Raw)))))
 
 # Microclimate model
-load("micro_ncep.Rda")
+load("data/micro_ncep.Rda")
 
 ############
-## To execute code for different animals start from here, changing sensor number (n_sensor) and body weight (Ww_g)
+## To execute code for different animals start from here, changing sensor number (n_sensor) and adding body weight
 
 metout <- data.frame(micro$metout)
 shadmet <- data.frame(micro$shadmet)
@@ -40,13 +38,13 @@ soil <- cbind(dates, soil)
 shadsoil <- cbind(dates, shadsoil)
 
 # Animal datalogger data
-n_sensor <- 17
+n_sensor <- 5
 s <- str_pad(n_sensor, 2, pad = "0")
-path <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\final\\TLCRP0", s, ".csv")
+path <- paste0("data/final/TLCRP0", s, ".csv")
 tl <- read.csv(file = path, head = TRUE)
-tl <- subset(tl, select = -c(1))
-tl <- subset(tl, select = -c(lux, lux_max, rel_light))
-tl$weight <- 56.4 ## ! according to animal 
+# tl <- subset(tl, select = -c(1,2))
+# tl <- subset(tl, select = -c(lux, lux_max, rel_light))
+tl$weight <- 100.9 ## ! according to animal 
 
 ### !! only for TLCRP016 (one row has an NA value for temp and humidity):
 # tl$TemperatureC <- na.approx(tl$TemperatureC)
@@ -83,7 +81,7 @@ tl$rel_light <- (tl$light * 100)/tl$light_open
 
 tl$rel_light[tl$rel_light > 100] <- 100
 
-
+# choose microclimate predictions only for the same date&time as the sensor recordings
 metout <- metout[metout$dates >= (tl[1, 'date_time']) & metout$dates <= (tl[nrow(tl), 'date_time']), ]
 soil <- soil[soil$dates >= (tl[1, 'date_time']) & soil$dates <= (tl[nrow(tl), 'date_time']), ]
 shadmet <- shadmet[shadmet$dates >= (tl[1, 'date_time']) & shadmet$dates <= (tl[nrow(tl), 'date_time']), ]
@@ -122,7 +120,7 @@ tl_m <- subset(tl, select = c('date_time', 'TemperatureC', 'air_temp', 'rel_ligh
 # tl_m <- tl_min
 
 
-source("C:/Users/Katerina/Documents/Master thesis/model/interp_micro.R")
+source("src/functions/interp_micro.R")
 inter <- interp_micro(metout, soil, shadmet, shadsoil, tl_m)
 
 metout <- as.data.frame(inter[1])
@@ -189,7 +187,7 @@ fatosb <- 0.4 # solar configuration factor to substrate, -
 alpha <- 0.9 # animal solar absorptivity, -
 emis <- 0.95 # emisivity of skin, -
 ########### change according to animal
-Ww_g <- 50.6 # weight, g
+Ww_g <- tl[1,'weight'] # weight, g
 ###########
 alpha_sub <- 0.8 # substrate solar absorptivity, -
 press <- 101325 # air pressure, Pa
@@ -266,6 +264,6 @@ Tb <- Tbs_ode$Tc
 tl <- cbind(tl, Tb)
 
 
-path1 <- paste0("C:\\Users\\Katerina\\Desktop\\mesocosms\\Tb_first\\TLCRP0", s, ".csv")
+path1 <- paste0("data/Tb_first\\TLCRP0", s, ".csv")
 write.csv(tl, path1)
 
