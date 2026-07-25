@@ -1,0 +1,30 @@
+# RStudio / R project files
+.Rproj.user/
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+.Renviron
+
+# renv - keep the lockfile and activation script, exclude the local library
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
+
+# OS-generated junk files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary / working files
+*.tmp
+~$*
+
+# Raw data / large output files (archived separately on Zenodo)
+data/raw/
+data/final/
+data/Tb_first/
